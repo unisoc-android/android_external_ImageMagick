@@ -26,7 +26,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/..
 
 LOCAL_CFLAGS += -DHAVE_CONFIG_H -Wall -Werror
 
-LOCAL_STATIC_LIBRARIES += libbz
-LOCAL_SHARED_LIBRARIES += libft2 liblzma libxml2 libicuuc libpng libjpeg
+LOCAL_STATIC_LIBRARIES += libbz libjpeg_static_ndk libpng_ndk
+LOCAL_SHARED_LIBRARIES += libft2 liblzma libxml2 libicuuc
 
 include $(BUILD_STATIC_LIBRARY)
