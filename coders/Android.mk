@@ -20,7 +20,8 @@ LOCAL_MODULE := Magick_coders
 
 LOCAL_SDK_VERSION := 24
 
-LOCAL_SRC_FILES += aai.c\
+LOCAL_SRC_FILES += \
+    aai.c\
     art.c\
     avs.c\
     bgr.c\
@@ -30,8 +31,8 @@ LOCAL_SRC_FILES += aai.c\
     caption.c\
     cin.c\
     cip.c\
-    clip.c\
     clipboard.c\
+    clip.c\
     cmyk.c\
     cut.c\
     dcm.c\
@@ -47,7 +48,6 @@ LOCAL_SRC_FILES += aai.c\
     ept.c\
     exr.c\
     fax.c\
-    fd.c\
     fits.c\
     flif.c\
     fpx.c\
@@ -56,6 +56,7 @@ LOCAL_SRC_FILES += aai.c\
     gray.c\
     hald.c\
     hdr.c\
+    heic.c\
     histogram.c\
     hrz.c\
     html.c\
@@ -76,10 +77,12 @@ LOCAL_SRC_FILES += aai.c\
     mat.c\
     matte.c\
     meta.c\
+    miff.c\
     mono.c\
     mpc.c\
     mpeg.c\
     mpr.c\
+    msl.c\
     mtv.c\
     mvg.c\
     null.c\
@@ -93,14 +96,15 @@ LOCAL_SRC_FILES += aai.c\
     pdb.c\
     pdf.c\
     pes.c\
+    pgx.c\
     pict.c\
     pix.c\
     plasma.c\
     png.c\
     pnm.c\
-    ps.c\
     ps2.c\
     ps3.c\
+    ps.c\
     psd.c\
     pwp.c\
     raw.c\
@@ -116,6 +120,7 @@ LOCAL_SRC_FILES += aai.c\
     sixel.c\
     stegano.c\
     sun.c\
+    svg.c\
     tga.c\
     thumbnail.c\
     tile.c\
@@ -133,8 +138,8 @@ LOCAL_SRC_FILES += aai.c\
     webp.c\
     wmf.c\
     wpg.c\
-    x.c\
     xbm.c\
+    x.c\
     xc.c\
     xcf.c\
     xpm.c\
@@ -142,10 +147,7 @@ LOCAL_SRC_FILES += aai.c\
     xtrn.c\
     xwd.c\
     ycbcr.c\
-    msl.c\
-    svg.c\
-    yuv.c\
-    miff.c
+    yuv.c
     #tiff.c\ # Removed because requires LIBTIFF
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/..
