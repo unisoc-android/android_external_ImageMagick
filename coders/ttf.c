@@ -17,13 +17,13 @@
 %                                 July 1992                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2016 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
 %  obtain a copy of the License at                                            %
 %                                                                             %
-%    http://www.imagemagick.org/script/license.php                            %
+%    https://imagemagick.org/script/license.php                               %
 %                                                                             %
 %  Unless required by applicable law or agreed to in writing, software        %
 %  distributed under the License is distributed on an "AS IS" BASIS,          %
@@ -55,7 +55,7 @@
 #include "MagickCore/string_.h"
 #include "MagickCore/module.h"
 #include "MagickCore/type.h"
-#include "MagickWand/MagickWand.h"
+#include "MagickCore/utility.h"
 #if defined(MAGICKCORE_FREETYPE_DELEGATE)
 #include <ft2build.h>
 #if defined(FT_FREETYPE_H)
@@ -245,7 +245,8 @@ static Image *ReadTTFImage(const ImageInfo *image_info,ExceptionInfo *exception)
       break;
   }
   (void) CopyMagickString(image->magick,image_info->magick,MagickPathExtent);
-  (void) CopyMagickString(image->filename,image_info->filename,MagickPathExtent);
+  (void) CopyMagickString(image->filename,image_info->filename,
+    MagickPathExtent);
   /*
     Prepare drawing commands
   */
@@ -253,11 +254,12 @@ static Image *ReadTTFImage(const ImageInfo *image_info,ExceptionInfo *exception)
   draw_info=CloneDrawInfo(image_info,(DrawInfo *) NULL);
   draw_info->font=AcquireString(image->filename);
   ConcatenateString(&draw_info->primitive,"push graphic-context\n");
-  (void) FormatLocaleString(buffer,MagickPathExtent," viewbox 0 0 %.20g %.20g\n",
-    (double) image->columns,(double) image->rows);
+  (void) FormatLocaleString(buffer,MagickPathExtent,
+    " viewbox 0 0 %.20g %.20g\n",(double) image->columns,(double) image->rows);
   ConcatenateString(&draw_info->primitive,buffer);
   ConcatenateString(&draw_info->primitive," font-size 18\n");
-  (void) FormatLocaleString(buffer,MagickPathExtent," text 10,%.20g '",(double) y);
+  (void) FormatLocaleString(buffer,MagickPathExtent," text 10,%.20g '",
+    (double) y);
   ConcatenateString(&draw_info->primitive,buffer);
   text=EscapeString(Text,'"');
   ConcatenateString(&draw_info->primitive,text);
@@ -269,8 +271,8 @@ static Image *ReadTTFImage(const ImageInfo *image_info,ExceptionInfo *exception)
   {
     y+=i+12;
     ConcatenateString(&draw_info->primitive," font-size 18\n");
-    (void) FormatLocaleString(buffer,MagickPathExtent," text 10,%.20g '%.20g'\n",
-      (double) y,(double) i);
+    (void) FormatLocaleString(buffer,MagickPathExtent,
+      " text 10,%.20g '%.20g'\n",(double) y,(double) i);
     ConcatenateString(&draw_info->primitive,buffer);
     (void) FormatLocaleString(buffer,MagickPathExtent," font-size %.20g\n",
       (double) i);
