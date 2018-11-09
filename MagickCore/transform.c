@@ -17,13 +17,13 @@
 %                                 July 1992                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2016 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
 %  obtain a copy of the License at                                            %
 %                                                                             %
-%    http://www.imagemagick.org/script/license.php                            %
+%    https://imagemagick.org/script/license.php                               %
 %                                                                             %
 %  Unless required by applicable law or agreed to in writing, software        %
 %  distributed under the License is distributed on an "AS IS" BASIS,          %
@@ -66,6 +66,7 @@
 #include "MagickCore/string_.h"
 #include "MagickCore/thread-private.h"
 #include "MagickCore/transform.h"
+#include "MagickCore/transform-private.h"
 
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -250,8 +251,8 @@ MagickExport Image *ChopImage(const Image *image,const RectangleInfo *chop_info,
   image_view=AcquireVirtualCacheView(image,exception);
   chop_view=AcquireAuthenticCacheView(chop_image,exception);
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-  #pragma omp parallel for schedule(static,4) shared(status) \
-    magick_threads(image,chop_image,1,1)
+  #pragma omp parallel for schedule(static) shared(status) \
+    magick_number_threads(image,chop_image,extent.y,1)
 #endif
   for (y=0; y < (ssize_t) extent.y; y++)
   {
@@ -283,8 +284,8 @@ MagickExport Image *ChopImage(const Image *image,const RectangleInfo *chop_info,
 
           for (i=0; i < (ssize_t) GetPixelChannels(image); i++)
           {
-            PixelChannel channel=GetPixelChannelChannel(image,i);
-            PixelTrait traits=GetPixelChannelTraits(image,channel);
+            PixelChannel channel = GetPixelChannelChannel(image,i);
+            PixelTrait traits = GetPixelChannelTraits(image,channel);
             PixelTrait chop_traits=GetPixelChannelTraits(chop_image,channel);
             if ((traits == UndefinedPixelTrait) ||
                 (chop_traits == UndefinedPixelTrait))
@@ -302,9 +303,6 @@ MagickExport Image *ChopImage(const Image *image,const RectangleInfo *chop_info,
         MagickBooleanType
           proceed;
 
-#if defined(MAGICKCORE_OPENMP_SUPPORT)
-        #pragma omp critical (MagickCore_ChopImage)
-#endif
         proceed=SetImageProgress(image,ChopImageTag,progress++,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
@@ -314,8 +312,8 @@ MagickExport Image *ChopImage(const Image *image,const RectangleInfo *chop_info,
     Extract chop image.
   */
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-  #pragma omp parallel for schedule(static,4) shared(progress,status) \
-    magick_threads(image,chop_image,1,1)
+  #pragma omp parallel for schedule(static) shared(progress,status) \
+    magick_number_threads(image,chop_image,image->rows-(extent.y+extent.height),1)
 #endif
   for (y=0; y < (ssize_t) (image->rows-(extent.y+extent.height)); y++)
   {
@@ -348,8 +346,8 @@ MagickExport Image *ChopImage(const Image *image,const RectangleInfo *chop_info,
 
           for (i=0; i < (ssize_t) GetPixelChannels(image); i++)
           {
-            PixelChannel channel=GetPixelChannelChannel(image,i);
-            PixelTrait traits=GetPixelChannelTraits(image,channel);
+            PixelChannel channel = GetPixelChannelChannel(image,i);
+            PixelTrait traits = GetPixelChannelTraits(image,channel);
             PixelTrait chop_traits=GetPixelChannelTraits(chop_image,channel);
             if ((traits == UndefinedPixelTrait) ||
                 (chop_traits == UndefinedPixelTrait))
@@ -367,9 +365,6 @@ MagickExport Image *ChopImage(const Image *image,const RectangleInfo *chop_info,
         MagickBooleanType
           proceed;
 
-#if defined(MAGICKCORE_OPENMP_SUPPORT)
-        #pragma omp critical (MagickCore_ChopImage)
-#endif
         proceed=SetImageProgress(image,ChopImageTag,progress++,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
@@ -441,7 +436,7 @@ MagickExport Image *ConsolidateCMYKImages(const Image *images,
       i;
 
     assert(images != (Image *) NULL);
-    cmyk_image=CloneImage(images,images->columns,images->rows,MagickTrue,
+    cmyk_image=CloneImage(images,0,0,MagickTrue,
       exception);
     if (cmyk_image == (Image *) NULL)
       break;
@@ -473,7 +468,7 @@ MagickExport Image *ConsolidateCMYKImages(const Image *images,
           Quantum
             pixel;
 
-          pixel=QuantumRange-GetPixelIntensity(images,p);
+          pixel=ClampToQuantum(QuantumRange-GetPixelIntensity(images,p));
           switch (i)
           {
             case 0: SetPixelCyan(cmyk_image,pixel,q);  break;
@@ -591,7 +586,7 @@ MagickExport Image *CropImage(const Image *image,const RectangleInfo *geometry,
       crop_image=CloneImage(image,1,1,MagickTrue,exception);
       if (crop_image == (Image *) NULL)
         return((Image *) NULL);
-      crop_image->background_color.alpha=(Quantum) TransparentAlpha;
+      crop_image->background_color.alpha=(MagickRealType) TransparentAlpha;
       crop_image->alpha_trait=BlendPixelTrait;
       (void) SetImageBackgroundColor(crop_image,exception);
       crop_image->page=bounding_box;
@@ -667,8 +662,8 @@ MagickExport Image *CropImage(const Image *image,const RectangleInfo *geometry,
   image_view=AcquireVirtualCacheView(image,exception);
   crop_view=AcquireAuthenticCacheView(crop_image,exception);
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-  #pragma omp parallel for schedule(static,4) shared(status) \
-    magick_threads(image,crop_image,1,1)
+  #pragma omp parallel for schedule(static) shared(status) \
+    magick_number_threads(image,crop_image,crop_image->rows,1)
 #endif
   for (y=0; y < (ssize_t) crop_image->rows; y++)
   {
@@ -697,17 +692,10 @@ MagickExport Image *CropImage(const Image *image,const RectangleInfo *geometry,
       register ssize_t
         i;
 
-      if (GetPixelReadMask(image,p) == 0)
-        {
-          SetPixelBackgoundColor(crop_image,q);
-          p+=GetPixelChannels(image);
-          q+=GetPixelChannels(crop_image);
-          continue;
-        }
       for (i=0; i < (ssize_t) GetPixelChannels(image); i++)
       {
-        PixelChannel channel=GetPixelChannelChannel(image,i);
-        PixelTrait traits=GetPixelChannelTraits(image,channel);
+        PixelChannel channel = GetPixelChannelChannel(image,i);
+        PixelTrait traits = GetPixelChannelTraits(image,channel);
         PixelTrait crop_traits=GetPixelChannelTraits(crop_image,channel);
         if ((traits == UndefinedPixelTrait) ||
             (crop_traits == UndefinedPixelTrait))
@@ -724,9 +712,6 @@ MagickExport Image *CropImage(const Image *image,const RectangleInfo *geometry,
         MagickBooleanType
           proceed;
 
-#if defined(MAGICKCORE_OPENMP_SUPPORT)
-        #pragma omp critical (MagickCore_CropImage)
-#endif
         proceed=SetImageProgress(image,CropImageTag,progress++,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
@@ -1020,8 +1005,8 @@ MagickExport Image *ExcerptImage(const Image *image,
   image_view=AcquireVirtualCacheView(image,exception);
   excerpt_view=AcquireAuthenticCacheView(excerpt_image,exception);
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-  #pragma omp parallel for schedule(static,4) shared(progress,status) \
-    magick_threads(image,excerpt_image,excerpt_image->rows,1)
+  #pragma omp parallel for schedule(static) shared(progress,status) \
+    magick_number_threads(image,excerpt_image,excerpt_image->rows,1)
 #endif
   for (y=0; y < (ssize_t) excerpt_image->rows; y++)
   {
@@ -1050,17 +1035,10 @@ MagickExport Image *ExcerptImage(const Image *image,
       register ssize_t
         i;
 
-      if (GetPixelReadMask(image,p) == 0)
-        {
-          SetPixelBackgoundColor(excerpt_image,q);
-          p+=GetPixelChannels(image);
-          q+=GetPixelChannels(excerpt_image);
-          continue;
-        }
       for (i=0; i < (ssize_t) GetPixelChannels(image); i++)
       {
-        PixelChannel channel=GetPixelChannelChannel(image,i);
-        PixelTrait traits=GetPixelChannelTraits(image,channel);
+        PixelChannel channel = GetPixelChannelChannel(image,i);
+        PixelTrait traits = GetPixelChannelTraits(image,channel);
         PixelTrait excerpt_traits=GetPixelChannelTraits(excerpt_image,channel);
         if ((traits == UndefinedPixelTrait) ||
             (excerpt_traits == UndefinedPixelTrait))
@@ -1077,9 +1055,6 @@ MagickExport Image *ExcerptImage(const Image *image,
         MagickBooleanType
           proceed;
 
-#if defined(MAGICKCORE_OPENMP_SUPPORT)
-        #pragma omp critical (MagickCore_ExcerptImage)
-#endif
         proceed=SetImageProgress(image,ExcerptImageTag,progress++,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
@@ -1129,6 +1104,9 @@ MagickExport Image *ExtentImage(const Image *image,
   Image
     *extent_image;
 
+  MagickBooleanType
+    status;
+
   /*
     Allocate extent image.
   */
@@ -1139,16 +1117,17 @@ MagickExport Image *ExtentImage(const Image *image,
   assert(geometry != (const RectangleInfo *) NULL);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
-  if ((image->columns == geometry->width) &&
-      (image->rows == geometry->height) &&
-      (geometry->x == 0) && (geometry->y == 0))
-    return(CloneImage(image,0,0,MagickTrue,exception));
   extent_image=CloneImage(image,geometry->width,geometry->height,MagickTrue,
     exception);
   if (extent_image == (Image *) NULL)
     return((Image *) NULL);
-  (void) SetImageBackgroundColor(extent_image,exception);
-  (void) CompositeImage(extent_image,image,image->compose,MagickTrue,
+  status=SetImageBackgroundColor(extent_image,exception);
+  if (status == MagickFalse)
+    {
+      extent_image=DestroyImage(extent_image);
+      return((Image *) NULL);
+    }
+  status=CompositeImage(extent_image,image,image->compose,MagickTrue,
     -geometry->x,-geometry->y,exception);
   return(extent_image);
 }
@@ -1207,7 +1186,7 @@ MagickExport Image *FlipImage(const Image *image,ExceptionInfo *exception)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
-  flip_image=CloneImage(image,image->columns,image->rows,MagickTrue,exception);
+  flip_image=CloneImage(image,0,0,MagickTrue,exception);
   if (flip_image == (Image *) NULL)
     return((Image *) NULL);
   /*
@@ -1219,8 +1198,8 @@ MagickExport Image *FlipImage(const Image *image,ExceptionInfo *exception)
   image_view=AcquireVirtualCacheView(image,exception);
   flip_view=AcquireAuthenticCacheView(flip_image,exception);
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-  #pragma omp parallel for schedule(static,4) shared(status) \
-    magick_threads(image,flip_image,1,1)
+  #pragma omp parallel for schedule(static) shared(status) \
+    magick_number_threads(image,flip_image,flip_image->rows,1)
 #endif
   for (y=0; y < (ssize_t) flip_image->rows; y++)
   {
@@ -1248,17 +1227,10 @@ MagickExport Image *FlipImage(const Image *image,ExceptionInfo *exception)
       register ssize_t
         i;
 
-      if (GetPixelReadMask(image,p) == 0)
-        {
-          SetPixelBackgoundColor(flip_image,q);
-          p+=GetPixelChannels(image);
-          q+=GetPixelChannels(flip_image);
-          continue;
-        }
       for (i=0; i < (ssize_t) GetPixelChannels(image); i++)
       {
-        PixelChannel channel=GetPixelChannelChannel(image,i);
-        PixelTrait traits=GetPixelChannelTraits(image,channel);
+        PixelChannel channel = GetPixelChannelChannel(image,i);
+        PixelTrait traits = GetPixelChannelTraits(image,channel);
         PixelTrait flip_traits=GetPixelChannelTraits(flip_image,channel);
         if ((traits == UndefinedPixelTrait) ||
             (flip_traits == UndefinedPixelTrait))
@@ -1275,9 +1247,6 @@ MagickExport Image *FlipImage(const Image *image,ExceptionInfo *exception)
         MagickBooleanType
           proceed;
 
-#if defined(MAGICKCORE_OPENMP_SUPPORT)
-        #pragma omp critical (MagickCore_FlipImage)
-#endif
         proceed=SetImageProgress(image,FlipImageTag,progress++,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
@@ -1348,7 +1317,7 @@ MagickExport Image *FlopImage(const Image *image,ExceptionInfo *exception)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
-  flop_image=CloneImage(image,image->columns,image->rows,MagickTrue,exception);
+  flop_image=CloneImage(image,0,0,MagickTrue,exception);
   if (flop_image == (Image *) NULL)
     return((Image *) NULL);
   /*
@@ -1360,8 +1329,8 @@ MagickExport Image *FlopImage(const Image *image,ExceptionInfo *exception)
   image_view=AcquireVirtualCacheView(image,exception);
   flop_view=AcquireAuthenticCacheView(flop_image,exception);
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-  #pragma omp parallel for schedule(static,4) shared(status) \
-    magick_threads(image,flop_image,1,1)
+  #pragma omp parallel for schedule(static) shared(status) \
+    magick_number_threads(image,flop_image,flop_image->rows,1)
 #endif
   for (y=0; y < (ssize_t) flop_image->rows; y++)
   {
@@ -1391,15 +1360,10 @@ MagickExport Image *FlopImage(const Image *image,ExceptionInfo *exception)
         i;
 
       q-=GetPixelChannels(flop_image);
-      if (GetPixelReadMask(image,p) == 0)
-        {
-          p+=GetPixelChannels(image);
-          continue;
-        }
       for (i=0; i < (ssize_t) GetPixelChannels(image); i++)
       {
-        PixelChannel channel=GetPixelChannelChannel(image,i);
-        PixelTrait traits=GetPixelChannelTraits(image,channel);
+        PixelChannel channel = GetPixelChannelChannel(image,i);
+        PixelTrait traits = GetPixelChannelTraits(image,channel);
         PixelTrait flop_traits=GetPixelChannelTraits(flop_image,channel);
         if ((traits == UndefinedPixelTrait) ||
             (flop_traits == UndefinedPixelTrait))
@@ -1415,9 +1379,6 @@ MagickExport Image *FlopImage(const Image *image,ExceptionInfo *exception)
         MagickBooleanType
           proceed;
 
-#if defined(MAGICKCORE_OPENMP_SUPPORT)
-        #pragma omp critical (MagickCore_FlopImage)
-#endif
         proceed=SetImageProgress(image,FlopImageTag,progress++,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
@@ -1483,8 +1444,8 @@ static MagickBooleanType CopyImageRegion(Image *destination,const Image *source,
   source_view=AcquireVirtualCacheView(source,exception);
   destination_view=AcquireAuthenticCacheView(destination,exception);
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-  #pragma omp parallel for schedule(static,4) shared(status) \
-    magick_threads(source,destination,rows,1)
+  #pragma omp parallel for schedule(static) shared(status) \
+    magick_number_threads(source,destination,rows,1)
 #endif
   for (y=0; y < (ssize_t) rows; y++)
   {
@@ -1517,16 +1478,9 @@ static MagickBooleanType CopyImageRegion(Image *destination,const Image *source,
       register ssize_t
         i;
 
-      if (GetPixelReadMask(source,p) == 0)
-        {
-          SetPixelBackgoundColor(destination,q);
-          p+=GetPixelChannels(source);
-          q+=GetPixelChannels(destination);
-          continue;
-        }
       for (i=0; i < (ssize_t) GetPixelChannels(source); i++)
       {
-        PixelChannel channel=GetPixelChannelChannel(source,i);
+        PixelChannel channel = GetPixelChannelChannel(source,i);
         PixelTrait source_traits=GetPixelChannelTraits(source,channel);
         PixelTrait destination_traits=GetPixelChannelTraits(destination,
           channel);
@@ -1570,7 +1524,7 @@ MagickExport Image *RollImage(const Image *image,const ssize_t x_offset,
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
-  roll_image=CloneImage(image,image->columns,image->rows,MagickTrue,exception);
+  roll_image=CloneImage(image,0,0,MagickTrue,exception);
   if (roll_image == (Image *) NULL)
     return((Image *) NULL);
   offset.x=x_offset;
@@ -1815,8 +1769,8 @@ MagickExport Image *SpliceImage(const Image *image,
   image_view=AcquireVirtualCacheView(image,exception);
   splice_view=AcquireAuthenticCacheView(splice_image,exception);
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-  #pragma omp parallel for schedule(static,4) shared(progress,status) \
-    magick_threads(image,splice_image,1,1)
+  #pragma omp parallel for schedule(static) shared(progress,status) \
+    magick_number_threads(image,splice_image,splice_geometry.y,1)
 #endif
   for (y=0; y < (ssize_t) splice_geometry.y; y++)
   {
@@ -1845,17 +1799,10 @@ MagickExport Image *SpliceImage(const Image *image,
       register ssize_t
         i;
 
-      if (GetPixelReadMask(image,p) == 0)
-        {
-          SetPixelBackgoundColor(splice_image,q);
-          p+=GetPixelChannels(image);
-          q+=GetPixelChannels(splice_image);
-          continue;
-        }
       for (i=0; i < (ssize_t) GetPixelChannels(image); i++)
       {
-        PixelChannel channel=GetPixelChannelChannel(image,i);
-        PixelTrait traits=GetPixelChannelTraits(image,channel);
+        PixelChannel channel = GetPixelChannelChannel(image,i);
+        PixelTrait traits = GetPixelChannelTraits(image,channel);
         PixelTrait splice_traits=GetPixelChannelTraits(splice_image,channel);
         if ((traits == UndefinedPixelTrait) ||
             (splice_traits == UndefinedPixelTrait))
@@ -1876,17 +1823,10 @@ MagickExport Image *SpliceImage(const Image *image,
       register ssize_t
         i;
 
-      if (GetPixelReadMask(image,p) == 0)
-        {
-          SetPixelBackgoundColor(splice_image,q);
-          p+=GetPixelChannels(image);
-          q+=GetPixelChannels(splice_image);
-          continue;
-        }
       for (i=0; i < (ssize_t) GetPixelChannels(image); i++)
       {
-        PixelChannel channel=GetPixelChannelChannel(image,i);
-        PixelTrait traits=GetPixelChannelTraits(image,channel);
+        PixelChannel channel = GetPixelChannelChannel(image,i);
+        PixelTrait traits = GetPixelChannelTraits(image,channel);
         PixelTrait splice_traits=GetPixelChannelTraits(splice_image,channel);
         if ((traits == UndefinedPixelTrait) ||
             (splice_traits == UndefinedPixelTrait))
@@ -1907,9 +1847,6 @@ MagickExport Image *SpliceImage(const Image *image,
         MagickBooleanType
           proceed;
 
-#if defined(MAGICKCORE_OPENMP_SUPPORT)
-        #pragma omp critical (MagickCore_TransposeImage)
-#endif
         proceed=SetImageProgress(image,SpliceImageTag,progress++,
           splice_image->rows);
         if (proceed == MagickFalse)
@@ -1917,8 +1854,8 @@ MagickExport Image *SpliceImage(const Image *image,
       }
   }
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-  #pragma omp parallel for schedule(static,4) shared(progress,status) \
-    magick_threads(image,splice_image,1,1)
+  #pragma omp parallel for schedule(static) shared(progress,status) \
+    magick_number_threads(image,splice_image,splice_image->rows,2)
 #endif
   for (y=(ssize_t) (splice_geometry.y+splice_geometry.height);
        y < (ssize_t) splice_image->rows; y++)
@@ -1950,17 +1887,10 @@ MagickExport Image *SpliceImage(const Image *image,
       register ssize_t
         i;
 
-      if (GetPixelReadMask(image,q) == 0)
-        {
-          SetPixelBackgoundColor(splice_image,q);
-          p+=GetPixelChannels(image);
-          q+=GetPixelChannels(splice_image);
-          continue;
-        }
       for (i=0; i < (ssize_t) GetPixelChannels(image); i++)
       {
-        PixelChannel channel=GetPixelChannelChannel(image,i);
-        PixelTrait traits=GetPixelChannelTraits(image,channel);
+        PixelChannel channel = GetPixelChannelChannel(image,i);
+        PixelTrait traits = GetPixelChannelTraits(image,channel);
         PixelTrait splice_traits=GetPixelChannelTraits(splice_image,channel);
         if ((traits == UndefinedPixelTrait) ||
             (splice_traits == UndefinedPixelTrait))
@@ -1981,17 +1911,10 @@ MagickExport Image *SpliceImage(const Image *image,
       register ssize_t
         i;
 
-      if (GetPixelReadMask(image,q) == 0)
-        {
-          SetPixelBackgoundColor(splice_image,q);
-          p+=GetPixelChannels(image);
-          q+=GetPixelChannels(splice_image);
-          continue;
-        }
       for (i=0; i < (ssize_t) GetPixelChannels(image); i++)
       {
-        PixelChannel channel=GetPixelChannelChannel(image,i);
-        PixelTrait traits=GetPixelChannelTraits(image,channel);
+        PixelChannel channel = GetPixelChannelChannel(image,i);
+        PixelTrait traits = GetPixelChannelTraits(image,channel);
         PixelTrait splice_traits=GetPixelChannelTraits(splice_image,channel);
         if ((traits == UndefinedPixelTrait) ||
             (splice_traits == UndefinedPixelTrait))
@@ -2012,9 +1935,6 @@ MagickExport Image *SpliceImage(const Image *image,
         MagickBooleanType
           proceed;
 
-#if defined(MAGICKCORE_OPENMP_SUPPORT)
-        #pragma omp critical (MagickCore_TransposeImage)
-#endif
         proceed=SetImageProgress(image,SpliceImageTag,progress++,
           splice_image->rows);
         if (proceed == MagickFalse)
@@ -2110,11 +2030,11 @@ MagickPrivate MagickBooleanType TransformImage(Image **image,
     }
   if (image_geometry == (const char *) NULL)
     return(MagickTrue);
-
   /*
     Scale image to a user specified size.
   */
-  (void) ParseRegionGeometry(transform_image,image_geometry,&geometry,exception);
+  (void) ParseRegionGeometry(transform_image,image_geometry,&geometry,
+    exception);
   if ((transform_image->columns == geometry.width) &&
       (transform_image->rows == geometry.height))
     return(MagickTrue);
@@ -2194,8 +2114,8 @@ MagickExport Image *TransposeImage(const Image *image,ExceptionInfo *exception)
   image_view=AcquireVirtualCacheView(image,exception);
   transpose_view=AcquireAuthenticCacheView(transpose_image,exception);
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-  #pragma omp parallel for schedule(static,4) shared(progress,status) \
-    magick_threads(image,transpose_image,image->rows,1)
+  #pragma omp parallel for schedule(static) shared(progress,status) \
+    magick_number_threads(image,transpose_image,image->rows,1)
 #endif
   for (y=0; y < (ssize_t) image->rows; y++)
   {
@@ -2224,17 +2144,10 @@ MagickExport Image *TransposeImage(const Image *image,ExceptionInfo *exception)
       register ssize_t
         i;
 
-      if (GetPixelReadMask(image,q) == 0)
-        {
-          SetPixelBackgoundColor(transpose_image,q);
-          p+=GetPixelChannels(image);
-          q+=GetPixelChannels(transpose_image);
-          continue;
-        }
       for (i=0; i < (ssize_t) GetPixelChannels(image); i++)
       {
-        PixelChannel channel=GetPixelChannelChannel(image,i);
-        PixelTrait traits=GetPixelChannelTraits(image,channel);
+        PixelChannel channel = GetPixelChannelChannel(image,i);
+        PixelTrait traits = GetPixelChannelTraits(image,channel);
         PixelTrait transpose_traits=GetPixelChannelTraits(transpose_image,
           channel);
         if ((traits == UndefinedPixelTrait) ||
@@ -2252,9 +2165,6 @@ MagickExport Image *TransposeImage(const Image *image,ExceptionInfo *exception)
         MagickBooleanType
           proceed;
 
-#if defined(MAGICKCORE_OPENMP_SUPPORT)
-        #pragma omp critical (MagickCore_TransposeImage)
-#endif
         proceed=SetImageProgress(image,TransposeImageTag,progress++,
           image->rows);
         if (proceed == MagickFalse)
@@ -2339,8 +2249,8 @@ MagickExport Image *TransverseImage(const Image *image,ExceptionInfo *exception)
   image_view=AcquireVirtualCacheView(image,exception);
   transverse_view=AcquireAuthenticCacheView(transverse_image,exception);
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
-  #pragma omp parallel for schedule(static,4) shared(progress,status) \
-    magick_threads(image,transverse_image,image->rows,1)
+  #pragma omp parallel for schedule(static) shared(progress,status) \
+    magick_number_threads(image,transverse_image,image->rows,1)
 #endif
   for (y=0; y < (ssize_t) image->rows; y++)
   {
@@ -2373,15 +2283,10 @@ MagickExport Image *TransverseImage(const Image *image,ExceptionInfo *exception)
         i;
 
       q-=GetPixelChannels(transverse_image);
-      if (GetPixelReadMask(image,p) == 0)
-        {
-          p+=GetPixelChannels(image);
-          continue;
-        }
       for (i=0; i < (ssize_t) GetPixelChannels(image); i++)
       {
-        PixelChannel channel=GetPixelChannelChannel(image,i);
-        PixelTrait traits=GetPixelChannelTraits(image,channel);
+        PixelChannel channel = GetPixelChannelChannel(image,i);
+        PixelTrait traits = GetPixelChannelTraits(image,channel);
         PixelTrait transverse_traits=GetPixelChannelTraits(transverse_image,
           channel);
         if ((traits == UndefinedPixelTrait) ||
@@ -2399,9 +2304,6 @@ MagickExport Image *TransverseImage(const Image *image,ExceptionInfo *exception)
         MagickBooleanType
           proceed;
 
-#if defined(MAGICKCORE_OPENMP_SUPPORT)
-        #pragma omp critical (MagickCore_TransverseImage)
-#endif
         proceed=SetImageProgress(image,TransverseImageTag,progress++,
           image->rows);
         if (proceed == MagickFalse)
@@ -2468,7 +2370,7 @@ MagickExport Image *TrimImage(const Image *image,ExceptionInfo *exception)
       crop_image=CloneImage(image,1,1,MagickTrue,exception);
       if (crop_image == (Image *) NULL)
         return((Image *) NULL);
-      crop_image->background_color.alpha=(Quantum) TransparentAlpha;
+      crop_image->background_color.alpha=(MagickRealType) TransparentAlpha;
       crop_image->alpha_trait=BlendPixelTrait;
       (void) SetImageBackgroundColor(crop_image,exception);
       crop_image->page=image->page;
