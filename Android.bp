@@ -1,0 +1,5 @@
+cc_library_headers {
+    name: "Magick_headers",
+    export_include_dirs: ["."],
+    sdk_version: "24",
+}
