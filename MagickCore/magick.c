@@ -18,7 +18,7 @@
 %                             November 1998                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -91,6 +91,14 @@
 #include "MagickCore/utility.h"
 #include "MagickCore/utility-private.h"
 #include "MagickCore/xwindow-private.h"
+#if defined(MAGICKCORE_XML_DELEGATE)
+#  if defined(MAGICKCORE_WINDOWS_SUPPORT)
+#    if !defined(__MINGW32__)
+#      include <win32config.h>
+#    endif
+#  endif
+#  include <libxml/parser.h>
+#endif
 
 /*
   Define declarations.
@@ -1562,6 +1570,9 @@ MagickExport void MagickCoreTerminus(void)
   RegistryComponentTerminus();
 #if defined(MAGICKCORE_X11_DELEGATE)
   XComponentTerminus();
+#endif
+#if defined(MAGICKCORE_XML_DELEGATE)
+  xmlCleanupParser();
 #endif
   AnnotateComponentTerminus();
   MimeComponentTerminus();

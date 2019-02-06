@@ -1,3 +1,87 @@
+2019-02-03  7.0.8-26 Cristy  <quetzlzacatenango@image...>
+  * Release ImageMagick version 7.0.8-26, GIT revision 15294:726bd82a3:20190203
+
+2019-02-02  7.0.8-26 Cristy  <quetzlzacatenango@image...>
+  * Fixed a number of issues (reference
+    https://github.com/ImageMagick/ImageMagick/issues).
+
+2019-01-27  7.0.8-25 Cristy  <quetzlzacatenango@image...>
+  * Release ImageMagick version 7.0.8-25, GIT revision 15279:7da783a5b:20190127
+
+2019-01-19  7.0.8-25 Cristy  <quetzlzacatenango@image...>
+  * Eliminate spurious font warning (reference
+    https://github.com/ImageMagick/ImageMagick/issues/1458).
+  * Support HEIC EXIF & XMP profiles.
+
+2019-01-12  7.0.8-24 Cristy  <quetzlzacatenango@image...>
+  * Release ImageMagick version 7.0.8-24, GIT revision 15233:db129ba64:20190112
+
+2019-01-08  7.0.8-24 Cristy  <quetzlzacatenango@image...>
+  * Support -clahe option real clip limit (reference
+    https://imagemagick.org/discourse-server/viewtopic.php?f=2&t=35292).
+  * ShadeImage() kernels can return negative pixels, clamp to range (reference
+    https://github.com/ImageMagick/ImageMagick/issues/1319).
+  * Annotate with negative offsets no longer renders slanted text.
+
+2019-01-01  7.0.8-23 Cristy  <quetzlzacatenango@image...>
+  * Release ImageMagick version 7.0.8-23, GIT revision 15199:ba07f7d07:20190101
+
+2019-01-01  7.0.8-23 Cristy  <quetzlzacatenango@image...>
+  * CacheInfo destructor must be aligned in DestroyPixelStream().
+
+2018-12-30  7.0.8-22 Cristy  <quetzlzacatenango@image...>
+  * Release ImageMagick version 7.0.8-22, GIT revision 15189:842164090:20181230
+
+2018-12-29  7.0.8-22 Cristy  <quetzlzacatenango@image...>
+  * Support negative rotations in a geometry (e.g. -10x-10+10+10).
+  * Return expected canvas offset after a crop with gravity.
+
+2018-12-27  7.0.8-21 Cristy  <quetzlzacatenango@image...>
+  * Release ImageMagick version 7.0.8-21, GIT revision 15179:114be1716:20181227
+
+2018-12-27  7.0.8-21 Cristy  <quetzlzacatenango@image...>
+  * Check to ensure SeekBlob() offset can be represented in an off_t.
+
+2018-12-23  7.0.8-20 Cristy  <quetzlzacatenango@image...>
+  * Release ImageMagick version 7.0.8-20, GIT revision 15170:8e8222e87:20181223
+
+2018-12-23  7.0.8-20 Cristy  <quetzlzacatenango@image...>
+  * Cube image format returns a HALD image.
+  * CLAHE tiles overlapped are now centered relative to the image.
+
+2018-12-19  7.0.8-19 Cristy  <quetzlzacatenango@image...>
+  * Release ImageMagick version 7.0.8-19, GIT revision 15153:e74ed77f5:20181219
+
+2018-12-18  7.0.8-18 Cristy  <quetzlzacatenango@image...>
+  * Release ImageMagick version 7.0.8-18, GIT revision 15146:b5eccd295:20181218
+
+2018-12-18  7.0.8-18 Cristy  <quetzlzacatenango@image...>
+  * Fixed Magick++ compile error on Mac OS X.
+
+2018-12-17  7.0.8-17 Cristy  <quetzlzacatenango@image...>
+  * Release ImageMagick version 7.0.8-17, GIT revision 15142:32f2d195e:20181217
+
+2018-12-02  7.0.8-16 Cristy  <quetzlzacatenango@image...>
+  * Support -clahe clip limit with percentages (e.g. -clahe 50x50%+128+3).
+
+2018-12-10  7.0.8-16 Cristy  <quetzlzacatenango@image...>
+  * Release ImageMagick version 7.0.8-16, GIT revision 15109:9a9af88de:20181210.
+
+2018-12-02  7.0.8-16 Cristy  <quetzlzacatenango@image...>
+  * Check for modulo underflow.
+  * Change SVG default DPI to 96 from 90 to meet recommendation of SVG2 & CSS.
+
+2018-12-01  7.0.8-15 Cristy  <quetzlzacatenango@image...>
+  * Release ImageMagick version 7.0.8-15, GIT revision 15059:2fb22e07b:20181201
+
+2018-11-21  7.0.8-15 Cristy  <quetzlzacatenango@image...>
+  * Added support for the -clahe option: contrast limited adaptive histogram
+    equalization.
+
+2018-11-13  7.0.8-15 Dirk Lemstra <dirk@lem.....org>
+  * Added support for GIMP 2.10 files (reference
+    https://github.com/ImageMagick/ImageMagick/pull/1381).
+
 2018-10-23  7.0.8-14 Cristy  <quetzlzacatenango@image...>
   * Release ImageMagick version 7.0.8-14, GIT revision 14943:1a0da3dd0:20181023
 

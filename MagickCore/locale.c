@@ -17,7 +17,7 @@
 %                                 July 2003                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -287,13 +287,8 @@ static SplayTreeInfo *AcquireLocaleSplayTree(const char *filename,
 */
 static void DestroyCLocale(void)
 {
-#if defined(MAGICKCORE_HAVE_NEWLOCALE)
   if (c_locale != (locale_t) NULL)
     freelocale(c_locale);
-#elif defined(MAGICKCORE_WINDOWS_SUPPORT) && !defined(__MINGW32__)
-  if (c_locale != (locale_t) NULL)
-    _free_locale(c_locale);
-#endif
   c_locale=(locale_t) NULL;
 }
 #endif
@@ -1439,10 +1434,12 @@ static MagickBooleanType LoadLocaleCache(SplayTreeInfo *cache,const char *xml,
 */
 MagickExport int LocaleCompare(const char *p,const char *q)
 {
-  if ((p == (char *) NULL) && (q == (char *) NULL))
-    return(0);
   if (p == (char *) NULL)
-    return(-1);
+    {
+      if (q == (char *) NULL)
+        return(0);
+      return(-1);
+    }
   if (q == (char *) NULL)
     return(1);
 #if defined(MAGICKCORE_HAVE_STRCASECMP)
@@ -1497,7 +1494,38 @@ MagickExport void LocaleLower(char *string)
 
   assert(string != (char *) NULL);
   for (q=string; *q != '\0'; q++)
-    *q=(char) tolower((int) *q);
+    *q=(char) LocaleLowercase((int) *q);
+}
+
+/*
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                             %
+%                                                                             %
+%                                                                             %
+%   L o c a l e L o w e r c a s e                                             %
+%                                                                             %
+%                                                                             %
+%                                                                             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  LocaleLowercase() convert to lowercase.
+%
+%  The format of the LocaleLowercase method is:
+%
+%      void LocaleLowercase(const int c)
+%
+%  A description of each parameter follows:
+%
+%    o If c is a uppercase letter, return its lowercase equivalent.
+%
+*/
+MagickExport int LocaleLowercase(const int c)
+{
+#if defined(MAGICKCORE_LOCALE_SUPPORT)
+  if (c_locale != (locale_t) NULL)
+    return(tolower_l(c,c_locale));
+#endif
+  return(tolower(c));
 }
 
 /*
@@ -1539,10 +1567,12 @@ MagickExport void LocaleLower(char *string)
 */
 MagickExport int LocaleNCompare(const char *p,const char *q,const size_t length)
 {
-  if ((p == (char *) NULL) && (q == (char *) NULL))
-    return(0);
   if (p == (char *) NULL)
-    return(-1);
+    {
+      if (q == (char *) NULL)
+        return(0);
+      return(-1);
+    }
   if (q == (char *) NULL)
     return(1);
 #if defined(MAGICKCORE_HAVE_STRNCASECMP)
@@ -1602,7 +1632,38 @@ MagickExport void LocaleUpper(char *string)
 
   assert(string != (char *) NULL);
   for (q=string; *q != '\0'; q++)
-    *q=(char) toupper((int) *q);
+    *q=(char) LocaleUppercase((int) *q);
+}
+
+/*
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                             %
+%                                                                             %
+%                                                                             %
+%   L o c a l e U p p e r c a s e                                             %
+%                                                                             %
+%                                                                             %
+%                                                                             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  LocaleUppercase() convert to uppercase.
+%
+%  The format of the LocaleUppercase method is:
+%
+%      void LocaleUppercase(const int c)
+%
+%  A description of each parameter follows:
+%
+%    o If c is a lowercase letter, return its uppercase equivalent.
+%
+*/
+MagickExport int LocaleUppercase(const int c)
+{
+#if defined(MAGICKCORE_LOCALE_SUPPORT)
+  if (c_locale != (locale_t) NULL)
+    return(toupper_l(c,c_locale));
+#endif
+  return(toupper(c));
 }
 
 /*

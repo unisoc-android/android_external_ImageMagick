@@ -22,7 +22,7 @@
 %                                March 2003                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -372,7 +372,11 @@ WandExport MagickBooleanType DuplexTransferWandViewIterator(WandView *source,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(source_image,source->description,progress++,
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(source_image,source->description,progress,
           source->extent.height);
         if (proceed == MagickFalse)
           status=MagickFalse;
@@ -576,7 +580,11 @@ WandExport MagickBooleanType GetWandViewIterator(WandView *source,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(source_image,source->description,progress++,
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(source_image,source->description,progress,
           source->extent.height);
         if (proceed == MagickFalse)
           status=MagickFalse;
@@ -983,8 +991,12 @@ WandExport MagickBooleanType SetWandViewIterator(WandView *destination,
         MagickBooleanType
           proceed;
 
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
         proceed=SetImageProgress(destination_image,destination->description,
-          progress++,destination->extent.height);
+          progress,destination->extent.height);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -1142,7 +1154,11 @@ WandExport MagickBooleanType TransferWandViewIterator(WandView *source,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(source_image,source->description,progress++,
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(source_image,source->description,progress,
           source->extent.height);
         if (proceed == MagickFalse)
           status=MagickFalse;
@@ -1272,7 +1288,11 @@ WandExport MagickBooleanType UpdateWandViewIterator(WandView *source,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(source_image,source->description,progress++,
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(source_image,source->description,progress,
           source->extent.height);
         if (proceed == MagickFalse)
           status=MagickFalse;

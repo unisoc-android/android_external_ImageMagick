@@ -18,7 +18,7 @@
 %                               December 2001                                 %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -660,7 +660,7 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
         bmp_info.x_pixels=ReadBlobLSBLong(image);
         bmp_info.y_pixels=ReadBlobLSBLong(image);
         bmp_info.number_colors=ReadBlobLSBLong(image);
-        if (bmp_info.number_colors > GetBlobSize(image))
+        if ((MagickSizeType) bmp_info.number_colors > GetBlobSize(image))
           ThrowReaderException(CorruptImageError,"InsufficientImageDataInFile");
         bmp_info.colors_important=ReadBlobLSBLong(image);
         if (image->debug != MagickFalse)
@@ -839,16 +839,16 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
     if ((bmp_info.bits_per_pixel != 1) && (bmp_info.bits_per_pixel != 4) &&
         (bmp_info.bits_per_pixel != 8) && (bmp_info.bits_per_pixel != 16) &&
         (bmp_info.bits_per_pixel != 24) && (bmp_info.bits_per_pixel != 32))
-      ThrowReaderException(CorruptImageError,"UnrecognizedBitsPerPixel");
+      ThrowReaderException(CorruptImageError,"UnsupportedBitsPerPixel");
     if (bmp_info.bits_per_pixel < 16 &&
         bmp_info.number_colors > (1U << bmp_info.bits_per_pixel))
       ThrowReaderException(CorruptImageError,"UnrecognizedNumberOfColors");
     if ((bmp_info.compression == 1) && (bmp_info.bits_per_pixel != 8))
-      ThrowReaderException(CorruptImageError,"UnrecognizedBitsPerPixel");
+      ThrowReaderException(CorruptImageError,"UnsupportedBitsPerPixel");
     if ((bmp_info.compression == 2) && (bmp_info.bits_per_pixel != 4))
-      ThrowReaderException(CorruptImageError,"UnrecognizedBitsPerPixel");
+      ThrowReaderException(CorruptImageError,"UnsupportedBitsPerPixel");
     if ((bmp_info.compression == 3) && (bmp_info.bits_per_pixel < 16))
-      ThrowReaderException(CorruptImageError,"UnrecognizedBitsPerPixel");
+      ThrowReaderException(CorruptImageError,"UnsupportedBitsPerPixel");
     switch (bmp_info.compression)
     {
       case BI_RGB:
@@ -954,7 +954,7 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
       bmp_info.bits_per_pixel<<=1;
     bytes_per_line=4*((image->columns*bmp_info.bits_per_pixel+31)/32);
     length=(size_t) bytes_per_line*image->rows;
-    if (((MagickSizeType) length/8) > GetBlobSize(image))
+    if ((MagickSizeType) (length/256) > GetBlobSize(image))
       ThrowReaderException(CorruptImageError,"InsufficientImageDataInFile");
     if ((bmp_info.compression == BI_RGB) ||
         (bmp_info.compression == BI_BITFIELDS))
@@ -1444,13 +1444,12 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
     if (image_info->number_scenes != 0)
       if (image->scene >= (image_info->scene+image_info->number_scenes-1))
         break;
+    offset=(MagickOffsetType) bmp_info.ba_offset;
+    if (offset != 0)
+      if ((offset < TellBlob(image)) ||
+          (SeekBlob(image,offset,SEEK_SET) != offset))
+        ThrowReaderException(CorruptImageError,"ImproperImageHeader");
     *magick='\0';
-    if (bmp_info.ba_offset != 0)
-      {
-        offset=SeekBlob(image,(MagickOffsetType) bmp_info.ba_offset,SEEK_SET);
-        if (offset < 0)
-          ThrowReaderException(CorruptImageError,"ImproperImageHeader");
-      }
     count=ReadBlob(image,2,magick);
     if ((count == 2) && (IsBMP(magick,2) != MagickFalse))
       {
@@ -1629,6 +1628,11 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
   unsigned char
     *bmp_data,
     *pixels;
+
+  MagickOffsetType
+    profile_data,
+    profile_size,
+    profile_size_pad;
 
   /*
     Open output image file.
@@ -1845,8 +1849,8 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
     /*
       Convert MIFF to BMP raster pixels.
     */
-    pixel_info=AcquireVirtualMemory(image->rows,
-      MagickMax(bytes_per_line,image->columns+256UL)*sizeof(*pixels));
+    pixel_info=AcquireVirtualMemory(image->rows,MagickMax(bytes_per_line,
+      image->columns+256UL)*sizeof(*pixels));
     if (pixel_info == (MemoryInfo *) NULL)
       ThrowWriterException(ResourceLimitError,"MemoryAllocationFailed");
     pixels=(unsigned char *) GetVirtualMemoryBlob(pixel_info);
@@ -2191,6 +2195,17 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
           (void) LogMagickEvent(CoderEvent,GetMagickModule(),
             "   Number_colors=%u",bmp_info.number_colors);
       }
+    profile_data=0;
+    profile_size=0;
+    profile_size_pad=0;
+    if (profile) {
+      profile_data=(MagickOffsetType) bmp_info.file_size-14;  /* from head of BMP info header */
+      profile_size=(MagickOffsetType) GetStringInfoLength(profile);
+      if (profile_size%4) {
+        profile_size_pad=4-(profile_size%4);
+      }
+      bmp_info.file_size+=profile_size+profile_size_pad;
+    }
     (void) WriteBlob(image,2,(unsigned char *) "BM");
     (void) WriteBlobLSBLong(image,bmp_info.file_size);
     (void) WriteBlobLSBLong(image,bmp_info.ba_offset);  /* always 0 */
@@ -2233,7 +2248,11 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
         (void) WriteBlobLSBLong(image,bmp_info.green_mask);
         (void) WriteBlobLSBLong(image,bmp_info.blue_mask);
         (void) WriteBlobLSBLong(image,bmp_info.alpha_mask);
-        (void) WriteBlobLSBLong(image,0x73524742U);  /* sRGB */
+        if (profile) {
+          (void) WriteBlobLSBLong(image,0x4D424544U);  /* PROFILE_EMBEDDED */
+        } else {
+          (void) WriteBlobLSBLong(image,0x73524742U);  /* sRGB */
+        }
         (void) WriteBlobLSBLong(image,(unsigned int)
           (image->chromaticity.red_primary.x*0x40000000));
         (void) WriteBlobLSBLong(image,(unsigned int)
@@ -2296,8 +2315,9 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
               }
             }
             (void) WriteBlobLSBLong(image,(unsigned int) intent);
-            (void) WriteBlobLSBLong(image,0x00);  /* dummy profile data */
-            (void) WriteBlobLSBLong(image,0x00);  /* dummy profile length */
+            (void) WriteBlobLSBLong(image,(unsigned int) profile_data);
+            (void) WriteBlobLSBLong(image,(unsigned int)
+              (profile_size+profile_size_pad));
             (void) WriteBlobLSBLong(image,0x00);  /* reserved */
           }
       }
@@ -2315,7 +2335,10 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
         bmp_colormap=(unsigned char *) AcquireQuantumMemory((size_t) (1UL <<
           bmp_info.bits_per_pixel),4*sizeof(*bmp_colormap));
         if (bmp_colormap == (unsigned char *) NULL)
-          ThrowWriterException(ResourceLimitError,"MemoryAllocationFailed");
+          {
+            pixel_info=RelinquishVirtualMemory(pixel_info);
+            ThrowWriterException(ResourceLimitError,"MemoryAllocationFailed");
+          }
         q=bmp_colormap;
         for (i=0; i < (ssize_t) MagickMin((ssize_t) image->colors,(ssize_t) bmp_info.number_colors); i++)
         {
@@ -2345,6 +2368,15 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
       (void) LogMagickEvent(CoderEvent,GetMagickModule(),
         "  Pixels:  %u bytes",bmp_info.image_size);
     (void) WriteBlob(image,(size_t) bmp_info.image_size,pixels);
+    if (profile) {
+      if (image->debug != MagickFalse)
+        (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+          "  Profile:  %g bytes",(double) profile_size+profile_size_pad);
+      (void) WriteBlob(image,(size_t) profile_size,GetStringInfoDatum(profile));
+      if (profile_size_pad) {  /* padding for 4 bytes multiple */
+        (void) WriteBlob(image,(size_t) profile_size_pad,"\0\0\0");
+      }
+    }
     pixel_info=RelinquishVirtualMemory(pixel_info);
     if (GetNextImageInList(image) == (Image *) NULL)
       break;

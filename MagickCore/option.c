@@ -17,7 +17,7 @@
 %                                 March 2000                                  %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -612,6 +612,8 @@ static const OptionInfo
     { "-charcoal", 1L, SimpleOperatorFlag, MagickFalse },
     { "+chop", 1L, DeprecateOptionFlag, MagickTrue },
     { "-chop", 1L, SimpleOperatorFlag, MagickFalse },
+    { "+clahe", 1L, DeprecateOptionFlag, MagickTrue },
+    { "-clahe", 1L, SimpleOperatorFlag, MagickFalse },
     { "+clamp", 0L, DeprecateOptionFlag, MagickTrue },
     { "-clamp", 0L, SimpleOperatorFlag, MagickFalse },
     { "-clip", 0L, SimpleOperatorFlag, MagickFalse },
