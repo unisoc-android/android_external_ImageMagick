@@ -22,7 +22,7 @@
 %                               October 1998                                  %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -4260,7 +4260,7 @@ MagickExport size_t ImportQuantumPixels(const Image *image,
         q+=GetPixelChannels(image);
       }
     }
-  if (quantum_info->alpha_type == DisassociatedQuantumAlpha)
+  if (quantum_info->alpha_type == AssociatedQuantumAlpha)
     {
       double
         gamma,

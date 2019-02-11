@@ -17,7 +17,7 @@
 %                                 March 2011                                  %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -729,6 +729,11 @@ static MagickBooleanType WriteWEBPImage(const ImageInfo *image_info,
   value=GetImageOption(image_info,"webp:thread-level");
   if (value != (char *) NULL)
     configure.thread_level=StringToInteger(value);
+#endif
+#if WEBP_DECODER_ABI_VERSION >= 0x020e
+  value=GetImageOption(image_info,"webp:use-sharp-yuv");
+  if (value != (char *) NULL)
+    configure.use_sharp_yuv=StringToInteger(value);
 #endif
   if (WebPValidateConfig(&configure) == 0)
     ThrowWriterException(ResourceLimitError,"UnableToEncodeImageFile");

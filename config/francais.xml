@@ -324,14 +324,14 @@
           <message name="UnrecognizedAlphaChannelOption">
             alpha de canal l'option non reconnus
           </message>
-          <message name="UnrecognizedBitsPerPixel">
-            bits par pixel non reconnus
-          </message>
           <message name="UnrecognizedImageCompression">
             compression non reconnue
           </message>
           <message name="UnrecognizedNumberOfColors">
             nombre de couleurs non reconnu
+          </message>
+          <message name="UnsupportedBitsPerPixel">
+            bits par pixel non supporté
           </message>
         </error>
         <fatalerror>
@@ -610,7 +610,7 @@
         <message name="CompositeImageRequired">
           image composite requise
         </message>
-        <message name="CurlyBrasesNestedTooDeeply">
+        <message name="CurlyBracesNestedTooDeeply">
           trop d'imbrication de curly braces
         </message>
         <message name="DepreciatedOptionNoCode">

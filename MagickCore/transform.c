@@ -17,7 +17,7 @@
 %                                 July 1992                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -303,7 +303,11 @@ MagickExport Image *ChopImage(const Image *image,const RectangleInfo *chop_info,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,ChopImageTag,progress++,image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,ChopImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -365,7 +369,11 @@ MagickExport Image *ChopImage(const Image *image,const RectangleInfo *chop_info,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,ChopImageTag,progress++,image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,ChopImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -712,7 +720,11 @@ MagickExport Image *CropImage(const Image *image,const RectangleInfo *geometry,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,CropImageTag,progress++,image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,CropImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -880,8 +892,6 @@ MagickExport Image *CropImageToTiles(const Image *image,
         {
           crop_image->page.width=geometry.width;
           crop_image->page.height=geometry.height;
-          crop_image->page.x-=geometry.x;
-          crop_image->page.y-=geometry.y;
         }
       return(crop_image);
     }
@@ -1055,7 +1065,11 @@ MagickExport Image *ExcerptImage(const Image *image,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,ExcerptImageTag,progress++,image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,ExcerptImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -1247,7 +1261,11 @@ MagickExport Image *FlipImage(const Image *image,ExceptionInfo *exception)
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,FlipImageTag,progress++,image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,FlipImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -1379,7 +1397,11 @@ MagickExport Image *FlopImage(const Image *image,ExceptionInfo *exception)
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,FlopImageTag,progress++,image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,FlopImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -1847,7 +1869,11 @@ MagickExport Image *SpliceImage(const Image *image,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,SpliceImageTag,progress++,
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,SpliceImageTag,progress,
           splice_image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
@@ -1935,7 +1961,11 @@ MagickExport Image *SpliceImage(const Image *image,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,SpliceImageTag,progress++,
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,SpliceImageTag,progress,
           splice_image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
@@ -2165,8 +2195,11 @@ MagickExport Image *TransposeImage(const Image *image,ExceptionInfo *exception)
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,TransposeImageTag,progress++,
-          image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,TransposeImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -2304,8 +2337,11 @@ MagickExport Image *TransverseImage(const Image *image,ExceptionInfo *exception)
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,TransverseImageTag,progress++,
-          image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,TransverseImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }

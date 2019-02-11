@@ -17,7 +17,7 @@
 %                                 July 1992                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -2885,10 +2885,10 @@ static MagickBooleanType ReadDCMPixels(Image *image,DCMInfo *info,
             else
               {
                 if ((i & 0x01) != 0)
-                  { 
+                  {
                     pixel_value=byte;
                     byte=ReadDCMByte(stream_info,image);
-                    if (byte >= 0)  
+                    if (byte >= 0)
                       pixel_value|=(byte << 8);
                   }
                 else
@@ -2961,11 +2961,11 @@ static MagickBooleanType ReadDCMPixels(Image *image,DCMInfo *info,
           if (info->scale != (Quantum *) NULL)
             {
               if ((MagickSizeType) pixel.red <= GetQuantumRange(info->depth))
-                pixel.red=info->scale[pixel.red];
+                pixel.red=(unsigned int) info->scale[pixel.red];
               if ((MagickSizeType) pixel.green <= GetQuantumRange(info->depth))
-                pixel.green=info->scale[pixel.green];
+                pixel.green=(unsigned int) info->scale[pixel.green];
               if ((MagickSizeType) pixel.blue <= GetQuantumRange(info->depth))
-                pixel.blue=info->scale[pixel.blue];
+                pixel.blue=(unsigned int) info->scale[pixel.blue];
             }
         }
       if (first_segment != MagickFalse)
@@ -3994,7 +3994,14 @@ static Image *ReadDCMImage(const ImageInfo *image_info,ExceptionInfo *exception)
               ThrowDCMException(ResourceLimitError,"MemoryAllocationFailed");
             for (i=0; i < (ssize_t) stream_info->offset_count; i++)
             {
-              stream_info->offsets[i]=(ssize_t) ReadBlobLSBSignedLong(image);
+              MagickOffsetType
+                offset;
+
+              offset=(MagickOffsetType) ReadBlobLSBSignedLong(image);
+              if (offset > (MagickOffsetType) GetBlobSize(image))
+                ThrowDCMException(CorruptImageError,
+                  "InsufficientImageDataInFile");
+              stream_info->offsets[i]=(ssize_t) offset;
               if (EOFBlob(image) != MagickFalse)
                 break;
             }
