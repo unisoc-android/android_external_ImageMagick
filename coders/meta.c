@@ -17,7 +17,7 @@
 %                                 July 2001                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -179,10 +179,10 @@ static int stringnicmp(const char *p,const char *q,size_t n)
       break;
     i=(*p);
     if (islower(i))
-      i=toupper(i);
+      i=LocaleUppercase(i);
     j=(*q);
     if (islower(j))
-      j=toupper(j);
+      j=LocaleUppercase(j);
     if (i != j)
       break;
     n--;
@@ -191,7 +191,7 @@ static int stringnicmp(const char *p,const char *q,size_t n)
     p++;
     q++;
   }
-  return(toupper((int) *p)-toupper((int) *q));
+  return(LocaleUppercase((int) *p)-LocaleUppercase((int) *q));
 }
 
 static size_t convertHTMLcodes(char *s)

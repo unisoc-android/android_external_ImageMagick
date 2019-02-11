@@ -18,7 +18,7 @@
 %                                                                             %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -92,6 +92,7 @@
 #include "MagickCore/string_.h"
 #include "MagickCore/string-private.h"
 #include "MagickCore/thread-private.h"
+#include "MagickCore/threshold.h"
 #include "MagickCore/transform.h"
 #include "MagickCore/transform-private.h"
 #include "MagickCore/utility.h"
@@ -387,8 +388,11 @@ MagickExport Image *AddNoiseImage(const Image *image,const NoiseType noise_type,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,AddNoiseImageTag,progress++,
-          image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,AddNoiseImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -540,8 +544,11 @@ MagickExport Image *BlueShiftImage(const Image *image,const double factor,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,BlueShiftImageTag,progress++,
-          image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,BlueShiftImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -589,8 +596,10 @@ MagickExport Image *CharcoalImage(const Image *image,const double radius,
 {
   Image
     *charcoal_image,
-    *clone_image,
     *edge_image;
+
+  MagickBooleanType
+    status;
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
@@ -598,20 +607,23 @@ MagickExport Image *CharcoalImage(const Image *image,const double radius,
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
-  clone_image=CloneImage(image,0,0,MagickTrue,exception);
-  if (clone_image == (Image *) NULL)
-    return((Image *) NULL);
-  edge_image=EdgeImage(clone_image,radius,exception);
-  clone_image=DestroyImage(clone_image);
+  edge_image=EdgeImage(image,radius,exception);
   if (edge_image == (Image *) NULL)
     return((Image *) NULL);
-  charcoal_image=BlurImage(edge_image,radius,sigma,exception);
+  charcoal_image=(Image *) NULL;
+  status=ClampImage(edge_image,exception);
+  if (status != MagickFalse)
+    charcoal_image=BlurImage(edge_image,radius,sigma,exception);
   edge_image=DestroyImage(edge_image);
   if (charcoal_image == (Image *) NULL)
     return((Image *) NULL);
-  (void) NormalizeImage(charcoal_image,exception);
-  (void) NegateImage(charcoal_image,MagickFalse,exception);
-  (void) GrayscaleImage(charcoal_image,image->intensity,exception);
+  status=NormalizeImage(charcoal_image,exception);
+  if (status != MagickFalse)
+    status=NegateImage(charcoal_image,MagickFalse,exception);
+  if (status != MagickFalse)
+    status=GrayscaleImage(charcoal_image,image->intensity,exception);
+  if (status == MagickFalse)
+    charcoal_image=DestroyImage(charcoal_image);
   return(charcoal_image);
 }
 
@@ -781,7 +793,11 @@ MagickExport Image *ColorizeImage(const Image *image,const char *blend,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,ColorizeImageTag,progress++,
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,ColorizeImageTag,progress,
           colorize_image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
@@ -999,7 +1015,11 @@ MagickExport Image *ColorMatrixImage(const Image *image,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,ColorMatrixImageTag,progress++,
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,ColorMatrixImageTag,progress,
           image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
@@ -1468,9 +1488,7 @@ static double FxGetSymbol(FxInfo *fx_info,const PixelChannel channel,
           alpha=(double) (QuantumScale*pixel.alpha);
           return(alpha);
         }
-        case IndexPixelChannel:
-          return(0.0);
-        case IntensityPixelChannel:
+        case CompositePixelChannel:
         {
           Quantum
             quantum_pixel[MaxPixelChannels];
@@ -1478,6 +1496,8 @@ static double FxGetSymbol(FxInfo *fx_info,const PixelChannel channel,
           SetPixelViaPixelInfo(image,&pixel,quantum_pixel);
           return(QuantumScale*GetPixelIntensity(image,quantum_pixel));
         }
+        case IndexPixelChannel:
+          return(0.0);
         default:
           break;
       }
@@ -3210,7 +3230,11 @@ MagickExport Image *FxImage(const Image *image,const char *expression,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,FxImageTag,progress++,image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,FxImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -3422,7 +3446,11 @@ MagickExport Image *ImplodeImage(const Image *image,const double amount,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(canvas_image,ImplodeImageTag,progress++,
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(canvas_image,ImplodeImageTag,progress,
           canvas_image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
@@ -4286,8 +4314,11 @@ MagickExport Image *SepiaToneImage(const Image *image,const double threshold,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,SepiaToneImageTag,progress++,
-          image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,SepiaToneImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -4582,9 +4613,13 @@ MagickExport Image *SketchImage(const Image *image,const double radius,
   blur_image=DestroyImage(blur_image);
   if (dodge_image == (Image *) NULL)
     return((Image *) NULL);
-  (void) NormalizeImage(dodge_image,exception);
-  (void) NegateImage(dodge_image,MagickFalse,exception);
-  (void) TransformImage(&dodge_image,(char *) NULL,"50%",exception);
+  status=ClampImage(dodge_image,exception);
+  if (status != MagickFalse)
+    status=NormalizeImage(dodge_image,exception);
+  if (status != MagickFalse)
+    status=NegateImage(dodge_image,MagickFalse,exception);
+  if (status != MagickFalse)
+    status=TransformImage(&dodge_image,(char *) NULL,"50%",exception);
   sketch_image=CloneImage(image,0,0,MagickTrue,exception);
   if (sketch_image == (Image *) NULL)
     {
@@ -4729,7 +4764,11 @@ MagickExport MagickBooleanType SolarizeImage(Image *image,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,SolarizeImageTag,progress++,image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,SolarizeImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -5248,7 +5287,11 @@ MagickExport Image *SwirlImage(const Image *image,double degrees,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(canvas_image,SwirlImageTag,progress++,
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(canvas_image,SwirlImageTag,progress,
           canvas_image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
@@ -5443,7 +5486,11 @@ MagickExport Image *TintImage(const Image *image,const char *blend,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,TintImageTag,progress++,image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,TintImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -5711,7 +5758,11 @@ MagickExport Image *WaveImage(const Image *image,const double amplitude,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(canvas_image,WaveImageTag,progress++,
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(canvas_image,WaveImageTag,progress,
           canvas_image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;

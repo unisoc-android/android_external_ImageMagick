@@ -17,7 +17,7 @@
 %                                 July 1992                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -1096,7 +1096,7 @@ static Image *ReadGIFImage(const ImageInfo *image_info,ExceptionInfo *exception)
               if (count == 0)
                 break;
               buffer[count]='\0';
-              if ((count+offset+MagickPathExtent) >= (ssize_t) extent)
+              if (((ssize_t) count+offset+MagickPathExtent) >= (ssize_t) extent)
                 {
                   extent<<=1;
                   comments=(char *) ResizeQuantumMemory(comments,extent+
@@ -1271,7 +1271,7 @@ static Image *ReadGIFImage(const ImageInfo *image_info,ExceptionInfo *exception)
       ((size_t) (flag & 0x07)+1);
     image->colors=local_colors;
     if (opacity >= (ssize_t) image->colors)
-      image->colors=(size_t) (opacity+1);
+      opacity=(-1);
     image->ticks_per_second=100;
     image->alpha_trait=opacity >= 0 ? BlendPixelTrait : UndefinedPixelTrait;
     if ((image->columns == 0) || (image->rows == 0))

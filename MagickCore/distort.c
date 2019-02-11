@@ -18,7 +18,7 @@
 %                                 June 2007                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -2789,8 +2789,11 @@ if ( d.x == 0.5 && d.y == 0.5 ) {
           MagickBooleanType
             proceed;
 
-          proceed=SetImageProgress(image,DistortImageTag,progress++,
-            image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+          #pragma omp atomic
+#endif
+          progress++;
+          proceed=SetImageProgress(image,DistortImageTag,progress,image->rows);
           if (proceed == MagickFalse)
             status=MagickFalse;
         }
@@ -3315,7 +3318,11 @@ MagickExport Image *SparseColorImage(const Image *image,
           MagickBooleanType
             proceed;
 
-          proceed=SetImageProgress(image,SparseColorTag,progress++,image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+          #pragma omp atomic
+#endif
+          progress++;
+          proceed=SetImageProgress(image,SparseColorTag,progress,image->rows);
           if (proceed == MagickFalse)
             status=MagickFalse;
         }

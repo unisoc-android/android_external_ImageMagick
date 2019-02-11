@@ -17,7 +17,7 @@
 %                               October 1998                                  %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -627,22 +627,29 @@ MagickExport Image *ReadImage(const ImageInfo *image_info,
       "notify the developers",image->magick,exception->severity);
   if (IsBlobTemporary(image) != MagickFalse)
     (void) RelinquishUniqueFileResource(read_info->filename);
-  if ((IsSceneGeometry(read_info->scenes,MagickFalse) != MagickFalse) &&
-      ((GetNextImageInList(image) != (Image *) NULL) ||
-       ((read_info->scenes != (char *) NULL) &&
-        (strchr(read_info->scenes,',') != (char *) NULL))))
+  if (IsSceneGeometry(read_info->scenes,MagickFalse) != MagickFalse)
     {
+      int 
+        first_scene,
+        last_scene,
+        n;
+
       Image
         *clones;
 
-      clones=CloneImages(image,read_info->scenes,exception);
-      if (clones == (Image *) NULL)
-        (void) ThrowMagickException(exception,GetMagickModule(),OptionError,
-          "SubimageSpecificationReturnsNoImages","`%s'",read_info->filename);
-      else
+      n=sscanf(read_info->scenes,"%d-%d",&first_scene,&last_scene);
+      if (n != 2)
         {
-          image=DestroyImageList(image);
-          image=GetFirstImageInList(clones);
+          clones=CloneImages(image,read_info->scenes,exception);
+          if (clones == (Image *) NULL)
+            (void) ThrowMagickException(exception,GetMagickModule(),OptionError,
+              "SubimageSpecificationReturnsNoImages","`%s'",
+              read_info->filename);
+          else
+            {
+              image=DestroyImageList(image);
+              image=GetFirstImageInList(clones);
+            }
         }
     }
   for (next=image; next != (Image *) NULL; next=GetNextImageInList(next))
@@ -673,9 +680,9 @@ MagickExport Image *ReadImage(const ImageInfo *image_info,
       next->magick_columns=next->columns;
     if (next->magick_rows == 0)
       next->magick_rows=next->rows;
-    value=GetImageProperty(next,"tiff:Orientation",exception);
+    value=GetImageProperty(next,"exif:Orientation",exception);
     if (value == (char *) NULL)
-      value=GetImageProperty(next,"exif:Orientation",exception);
+      value=GetImageProperty(next,"tiff:Orientation",exception);
     if (value != (char *) NULL)
       {
         next->orientation=(OrientationType) StringToLong(value);
@@ -706,9 +713,9 @@ MagickExport Image *ReadImage(const ImageInfo *image_info,
           next->resolution.y=geometry_info.rho+geometry_info.sigma/1000.0;
         (void) DeleteImageProperty(next,"exif:YResolution");
       }
-    value=GetImageProperty(next,"tiff:ResolutionUnit",exception);
+    value=GetImageProperty(next,"exif:ResolutionUnit",exception);
     if (value == (char *) NULL)
-      value=GetImageProperty(next,"exif:ResolutionUnit",exception);
+      value=GetImageProperty(next,"tiff:ResolutionUnit",exception);
     if (value != (char *) NULL)
       {
         option_type=ParseCommandOption(MagickResolutionOptions,MagickFalse,
@@ -1385,7 +1392,11 @@ MagickExport MagickBooleanType WriteImages(const ImageInfo *image_info,
       break;
     if (number_images != 1)
       {
-        proceed=SetImageProgress(p,WriteImageTag,progress++,number_images);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(p,WriteImageTag,progress,number_images);
         if (proceed == MagickFalse)
           break;
       }

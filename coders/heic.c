@@ -22,6 +22,9 @@
 %                                                                             %
 %                      Copyright 2017-2018 YANDEX LLC.                        %
 %                                                                             %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
+%  dedicated to making software imaging solutions freely available.           %
+%                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
 %  obtain a copy of the License at                                            %
 %                                                                             %
@@ -81,12 +84,22 @@
 
 #if defined(MAGICKCORE_HEIC_DELEGATE)
 
+/*
+  Const declarations.
+*/
+static const char *xmp_namespace = "http://ns.adobe.com/xap/1.0/ ";
+#define XmpNamespaceExtent 28
+
+/*
+  Forward declarations.
+*/
+
 #if !defined(MAGICKCORE_WINDOWS_SUPPORT)
 static MagickBooleanType
   WriteHEICImage(const ImageInfo *,Image *,ExceptionInfo *);
 #endif
-
-/*
+
+/*x
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                             %
 %                                                                             %
@@ -120,55 +133,6 @@ static MagickBooleanType IsHeifSuccess(struct heif_error *error,Image *image,
     return(MagickTrue);
 
   ThrowBinaryException(CorruptImageError,error->message,image->filename);
-}
-
-/* An inverse of AutoOrientImage */
-static Image *CompensateOrientation(Image *image, ExceptionInfo *exception)
-{
-  const char
-    *value;
-
-  Image
-    *new_image;
-
-  value=GetImageProperty(image,"exif:Orientation",exception);
-  if (value == NULL)
-  {
-    return image;
-  }
-
-  switch((OrientationType) StringToLong(value))
-  {
-    case UndefinedOrientation:
-    case TopLeftOrientation:
-    default:
-      return(image);
-
-    case TopRightOrientation:
-      new_image=FlipImage(image,exception);
-      break;
-    case BottomRightOrientation:
-      new_image=RotateImage(image,180.0,exception);
-      break;
-    case BottomLeftOrientation:
-      new_image=FlopImage(image,exception);
-      break;
-    case LeftTopOrientation:
-      new_image=TransverseImage(image,exception);
-      break;
-    case RightTopOrientation:
-      new_image=RotateImage(image,270.0,exception);
-      break;
-    case RightBottomOrientation:
-      new_image=TransposeImage(image,exception);
-      break;
-    case LeftBottomOrientation:
-      new_image=RotateImage(image,90.0,exception);
-      break;
-  }
-
-  image=DestroyImageList(image);
-  return(new_image);
 }
 
 static Image *ReadHEICImage(const ImageInfo *image_info,
@@ -206,6 +170,9 @@ static Image *ReadHEICImage(const ImageInfo *image_info,
 
   struct heif_image_handle
     *image_handle;
+
+  struct heif_decoding_options
+    *decode_options;
 
   uint8_t
     *p_y,
@@ -269,7 +236,7 @@ static Image *ReadHEICImage(const ImageInfo *image_info,
       size_t
         exif_size;
 
-      void
+      unsigned char
         *exif_buffer;
 
       exif_size=heif_image_handle_get_metadata_size(image_handle,exif_id);
@@ -280,8 +247,8 @@ static Image *ReadHEICImage(const ImageInfo *image_info,
           ThrowReaderException(CorruptImageError,
             "InsufficientImageDataInFile");
         }
-      exif_buffer=AcquireMagickMemory(exif_size);
-      if (exif_buffer != NULL)
+      exif_buffer=(unsigned char *) AcquireMagickMemory(exif_size);
+      if (exif_buffer !=(unsigned char *) NULL)
         {
           error=heif_image_handle_get_metadata(image_handle,
             exif_id,exif_buffer);
@@ -290,7 +257,11 @@ static Image *ReadHEICImage(const ImageInfo *image_info,
               StringInfo
                 *profile;
 
-              profile=BlobToStringInfo(exif_buffer,exif_size);
+              // The first 4 byte should be skipped since they indicate the
+              // offset to the start of the TIFF header of the Exif data.
+              profile=(StringInfo*) NULL;
+              if (exif_size > 8)
+                profile=BlobToStringInfo(exif_buffer+4,exif_size-4);
               if (profile != (StringInfo*) NULL)
                 {
                   SetImageProfile(image,"exif",profile,exception);
@@ -324,9 +295,27 @@ static Image *ReadHEICImage(const ImageInfo *image_info,
     Copy HEIF image into ImageMagick data structures
   */
   (void) SetImageColorspace(image,YCbCrColorspace,exception);
+  decode_options=(struct heif_decoding_options *) NULL;
+  option=GetImageOption(image_info,"heic:preserve-orientation");
+  if (IsStringTrue(option) == MagickTrue)
+    {
+      decode_options=heif_decoding_options_alloc();
+      decode_options->ignore_transformations=1;
+    }
+  else
+    SetImageProperty(image,"exif:Orientation","1",exception);
   error=heif_decode_image(image_handle,&heif_image,heif_colorspace_YCbCr,
-    heif_chroma_420,NULL);
-  if (IsHeifSuccess(&error,image,exception) == MagickFalse)
+    heif_chroma_420,decode_options);
+  if (decode_options != (struct heif_decoding_options *) NULL)
+    {
+      /* Correct the width and height of the image */
+      image->columns=(size_t) heif_image_get_width(heif_image,heif_channel_Y);
+      image->rows=(size_t) heif_image_get_height(heif_image,heif_channel_Y);
+      status=SetImageExtent(image,image->columns,image->rows,exception);
+      heif_decoding_options_free(decode_options);
+    }
+  if ((IsHeifSuccess(&error,image,exception) == MagickFalse) ||
+      (status == MagickFalse))
     {
       heif_image_handle_release(image_handle);
       heif_context_free(heif_context);
@@ -359,22 +348,6 @@ static Image *ReadHEICImage(const ImageInfo *image_info,
   heif_image_release(heif_image);
   heif_image_handle_release(image_handle);
   heif_context_free(heif_context);
-
-  /*
-    There is a discrepancy between EXIF data and the actual orientation of
-    image pixels. ReadImage processes "exif:Orientation" expecting pixels to be
-    oriented accordingly. However, in HEIF the pixels are NOT rotated.
-
-    There are two solutions to this problem: either reset the EXIF Orientation
-    tag so it matches the orientation of pixels, or rotate the pixels to match
-    EXIF data.
-   */
-  option=GetImageOption(image_info,"heic:preserve-orientation");
-  if (IsStringTrue(option) == MagickTrue)
-    image=CompensateOrientation(image,exception);
-  else
-    SetImageProperty(image,"exif:Orientation","1",exception);
-
   return(GetFirstImageInList(image));
 }
 #endif
@@ -485,7 +458,6 @@ ModuleExport void UnregisterHEICImage(void)
   (void) UnregisterMagickInfo("HEIC");
 }
 
-
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                             %
@@ -514,6 +486,95 @@ ModuleExport void UnregisterHEICImage(void)
 %
 */
 #if defined(MAGICKCORE_HEIC_DELEGATE) && !defined(MAGICKCORE_WINDOWS_SUPPORT)
+static void WriteProfile(struct heif_context* ctx,Image *image,
+  ExceptionInfo *exception)
+{
+  const char
+    *name;
+
+  const StringInfo
+    *profile;
+
+  MagickBooleanType
+    iptc;
+
+  register ssize_t
+    i;
+
+  size_t
+    length;
+
+  StringInfo
+    *custom_profile;
+
+  struct heif_error
+    error;
+
+  struct heif_image_handle
+    *image_handle;
+
+  /*Get image handle*/
+  image_handle=(struct heif_image_handle *) NULL;
+  error=heif_context_get_primary_image_handle(ctx,&image_handle);
+  if (error.code != 0)
+    return;
+
+  /*
+    Save image profile as a APP marker.
+  */
+  iptc=MagickFalse;
+  custom_profile=AcquireStringInfo(65535L);
+  ResetImageProfileIterator(image);
+  for (name=GetNextImageProfile(image); name != (const char *) NULL; )
+  {
+    profile=GetImageProfile(image,name);
+    length=GetStringInfoLength(profile);
+
+    if (LocaleCompare(name,"EXIF") == 0)
+      {
+        length=GetStringInfoLength(profile);
+        if (length > 65533L)
+          {
+            (void) ThrowMagickException(exception,GetMagickModule(),
+              CoderWarning,"ExifProfileSizeExceedsLimit","`%s'",
+              image->filename);
+            length=65533L;
+          }
+          (void) heif_context_add_exif_metadata(ctx,image_handle,
+            (void*) GetStringInfoDatum(profile),length);
+      }
+
+    if (LocaleCompare(name,"XMP") == 0)
+      {
+        StringInfo
+          *xmp_profile;
+
+        xmp_profile=StringToStringInfo(xmp_namespace);
+        if (xmp_profile != (StringInfo *) NULL)
+          {
+            if (profile != (StringInfo *) NULL)
+              ConcatenateStringInfo(xmp_profile,profile);
+            GetStringInfoDatum(xmp_profile)[XmpNamespaceExtent]='\0';
+            for (i=0; i < (ssize_t) GetStringInfoLength(xmp_profile); i+=65533L)
+            {
+              length=MagickMin(GetStringInfoLength(xmp_profile)-i,65533L);
+              error=heif_context_add_XMP_metadata(ctx,image_handle,
+                (void*) (GetStringInfoDatum(xmp_profile)+i),length);
+              if (error.code != 0)
+                break;
+            }
+            xmp_profile=DestroyStringInfo(xmp_profile);
+          }
+      }
+    if (image->debug != MagickFalse)
+      (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+        "%s profile: %.20g bytes",name,(double) GetStringInfoLength(profile));
+    name=GetNextImageProfile(image);
+  }
+  custom_profile=DestroyStringInfo(custom_profile);
+  heif_image_handle_release(image_handle);
+}
+
 static struct heif_error heif_write_func(struct heif_context *ctx,const void* data,
   size_t size,void* userdata)
 {
@@ -646,7 +707,7 @@ static MagickBooleanType WriteHEICImage(const ImageInfo *image_info,Image *image
                 p));
               p+=GetPixelChannels(image);
 
-              if (x+1 < image->columns)
+              if (x+1 < (long) image->columns)
                 {
                   p_y[y*stride_y + x+1]=ScaleQuantumToChar(GetPixelRed(image,
                     p));
@@ -696,6 +757,10 @@ static MagickBooleanType WriteHEICImage(const ImageInfo *image_info,Image *image
       break;
     writer.writer_api_version=1;
     writer.write=heif_write_func;
+
+  	if (image->profiles != (void *) NULL)
+    	WriteProfile(heif_context, image, exception);
+
     error=heif_context_write(heif_context,&writer,image);
     status=IsHeifSuccess(&error,image,exception);
     if (status == MagickFalse)

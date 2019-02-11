@@ -17,7 +17,7 @@
 %                                 July 1992                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -839,6 +839,7 @@ MagickExport Image *CloneImage(const Image *image,const size_t columns,
   GetTimerInfo(&clone_image->timer);
   if (image->ascii85 != (void *) NULL)
     Ascii85Initialize(clone_image);
+  clone_image->extent=image->extent;
   clone_image->magick_columns=image->magick_columns;
   clone_image->magick_rows=image->magick_rows;
   clone_image->type=image->type;
@@ -1138,7 +1139,11 @@ MagickExport MagickBooleanType CopyImagePixels(Image *image,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,CopyImageTag,progress++,image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,CopyImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -2879,7 +2884,10 @@ MagickExport MagickBooleanType SetImageInfo(ImageInfo *image_info,
     {
       (void) CopyMagickString(magic,image_info->magick,MagickPathExtent);
       magick_info=GetMagickInfo(magic,sans_exception);
-      GetPathComponent(image_info->filename,CanonicalPath,component);
+      if (frames == 0)
+        GetPathComponent(image_info->filename,CanonicalPath,component);
+      else
+        GetPathComponent(image_info->filename,SubcanonicalPath,component);
       (void) CopyMagickString(image_info->filename,component,MagickPathExtent);
     }
   else
