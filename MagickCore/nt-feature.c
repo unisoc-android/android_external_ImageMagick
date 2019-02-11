@@ -18,7 +18,7 @@
 %                                December 1996                                %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -96,8 +96,8 @@ MagickExport MagickBooleanType NTIsMagickConflict(const char *magick)
   assert(magick != (char *) NULL);
   if (strlen(magick) > 1)
     return(MagickFalse);
-  status=(GetLogicalDrives() & (1 << ((toupper((int) (*magick)))-'A'))) != 0 ?
-    MagickTrue : MagickFalse;
+  status=(GetLogicalDrives() & (1 << ((LocaleUppercase((int)
+    (*magick)))-'A'))) != 0 ? MagickTrue : MagickFalse;
   return(status);
 }
 

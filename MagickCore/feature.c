@@ -17,7 +17,7 @@
 %                                 July 1992                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -554,8 +554,11 @@ MagickExport Image *CannyEdgeImage(const Image *image,const double radius,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,CannyEdgeImageTag,progress++,
-          image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,CannyEdgeImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -1942,8 +1945,11 @@ MagickExport Image *HoughLineImage(const Image *image,const size_t width,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,CannyEdgeImageTag,progress++,
-          image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,CannyEdgeImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -2315,8 +2321,11 @@ MagickExport Image *MeanShiftImage(const Image *image,const size_t width,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,MeanShiftImageTag,progress++,
-          image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,MeanShiftImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }

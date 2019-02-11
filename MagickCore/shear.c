@@ -17,7 +17,7 @@
 %                                  July 1992                                  %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -1283,7 +1283,11 @@ static MagickBooleanType XShearImage(Image *image,const double degrees,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,XShearImageTag,progress++,height);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,XShearImageTag,progress,height);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }
@@ -1498,7 +1502,11 @@ static MagickBooleanType YShearImage(Image *image,const double degrees,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(image,YShearImageTag,progress++,image->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(image,YShearImageTag,progress,image->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }

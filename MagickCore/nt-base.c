@@ -17,7 +17,7 @@
 %                                December 1996                                %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -620,9 +620,25 @@ MagickPrivate double NTElapsedTime(void)
       filetime64;
   } elapsed_time;
 
+  LARGE_INTEGER
+    performance_count;
+
+  static LARGE_INTEGER
+    frequency = { 0 };
+
   SYSTEMTIME
     system_time;
 
+  if (frequency.QuadPart == 0)
+    {
+      if (QueryPerformanceFrequency(&frequency) == 0)
+        frequency.QuadPart=1;
+    }
+  if (frequency.QuadPart > 1)
+    {
+      QueryPerformanceCounter(&performance_count);
+      return((double) performance_count.QuadPart/frequency.QuadPart);
+    }
   GetSystemTime(&system_time);
   SystemTimeToFileTime(&system_time,&elapsed_time.filetime);
   return((double) 1.0e-7*elapsed_time.filetime64);
@@ -2450,10 +2466,8 @@ MagickPrivate int NTSystemCommand(const char *command,char *output)
   CloseHandle(process_info.hProcess);
   CloseHandle(process_info.hThread);
   if (read_output != (HANDLE) NULL)
-    if (PeekNamedPipe(read_output,(LPVOID) NULL,0,(LPDWORD) NULL,&size,
-          (LPDWORD) NULL))
-      if ((size > 0) && (ReadFile(read_output,output,MagickPathExtent-1,
-          &bytes_read,NULL))) 
+    if (PeekNamedPipe(read_output,(LPVOID) NULL,0,(LPDWORD) NULL,&size,(LPDWORD) NULL))
+      if ((size > 0) && (ReadFile(read_output,output,MagickPathExtent-1,&bytes_read,NULL)))
         output[bytes_read]='\0';
   CleanupOutputHandles;
   return((int) child_status);

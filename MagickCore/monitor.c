@@ -17,7 +17,7 @@
 %                               December 1995                                 %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -44,6 +44,7 @@
 #include "MagickCore/image.h"
 #include "MagickCore/log.h"
 #include "MagickCore/monitor.h"
+#include "MagickCore/monitor-private.h"
 
 /*
   Static declarations.

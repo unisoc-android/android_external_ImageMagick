@@ -19,7 +19,7 @@
 %                               December 2001                                 %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -98,7 +98,6 @@
 #      include <win32config.h>
 #    endif
 #  endif
-#  include <libxml/parser.h>
 #  include <libxml/xmlmemory.h>
 #  include <libxml/parserInternals.h>
 #  include <libxml/xmlerror.h>
@@ -7625,6 +7624,9 @@ static void MSLComment(void *context,const xmlChar *value)
 }
 
 static void MSLWarning(void *context,const char *format,...)
+  magick_attribute((__format__ (__printf__,2,3)));
+
+static void MSLWarning(void *context,const char *format,...)
 {
   char
     *message,
@@ -7655,6 +7657,9 @@ static void MSLWarning(void *context,const char *format,...)
   message=DestroyString(message);
   va_end(operands);
 }
+
+static void MSLError(void *context,const char *format,...)
+  magick_attribute((__format__ (__printf__,2,3)));
 
 static void MSLError(void *context,const char *format,...)
 {
@@ -8305,9 +8310,6 @@ static MagickBooleanType SetMSLAttributes(MSLInfo *msl_info,const char *keyword,
 ModuleExport void UnregisterMSLImage(void)
 {
   (void) UnregisterMagickInfo("MSL");
-#if defined(MAGICKCORE_XML_DELEGATE)
-  xmlCleanupParser();
-#endif
 }
 
 #if defined(MAGICKCORE_XML_DELEGATE)

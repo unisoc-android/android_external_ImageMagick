@@ -17,7 +17,7 @@
 %                               February 2002                                 %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -135,6 +135,8 @@ static Image *ReadCAPTIONImage(const ImageInfo *image_info,
   assert(exception->signature == MagickCoreSignature);
   image=AcquireImage(image_info,exception);
   (void) ResetImagePage(image,"0x0+0+0");
+  if ((image->columns != 0) && (image->rows != 0))
+    (void) SetImageBackgroundColor(image,exception);
   /*
     Format caption.
   */
@@ -167,6 +169,7 @@ static Image *ReadCAPTIONImage(const ImageInfo *image_info,
       MagickFalse,gravity);
   split=MagickFalse;
   status=MagickTrue;
+  (void) memset(&metrics,0,sizeof(metrics));
   if (image->columns == 0)
     {
       text=AcquireString(caption);

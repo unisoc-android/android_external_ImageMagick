@@ -17,7 +17,7 @@
 %                                 May 2001                                    %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -544,14 +544,14 @@ MagickExport MagickBooleanType ListCoderInfo(FILE *file,
       {
         if (coder_info[i]->path != (char *) NULL)
           (void) FormatLocaleFile(file,"\nPath: %s\n\n",coder_info[i]->path);
-        (void) FormatLocaleFile(file,"Magick      Coder\n");
+        (void) FormatLocaleFile(file,"Magick          Coder\n");
         (void) FormatLocaleFile(file,
           "-------------------------------------------------"
           "------------------------------\n");
       }
     path=coder_info[i]->path;
     (void) FormatLocaleFile(file,"%s",coder_info[i]->magick);
-    for (j=(ssize_t) strlen(coder_info[i]->magick); j <= 11; j++)
+    for (j=(ssize_t) strlen(coder_info[i]->magick); j <= 15; j++)
       (void) FormatLocaleFile(file," ");
     if (coder_info[i]->name != (char *) NULL)
       (void) FormatLocaleFile(file,"%s",coder_info[i]->name);

@@ -17,7 +17,7 @@
 %                                 March 2000                                  %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -95,15 +95,6 @@
 #else
 #include "lcms.h"
 #endif
-#endif
-#if defined(MAGICKCORE_XML_DELEGATE)
-#  if defined(MAGICKCORE_WINDOWS_SUPPORT)
-#    if !defined(__MINGW32__)
-#      include <win32config.h>
-#    endif
-#  endif
-#  include <libxml/parser.h>
-#  include <libxml/tree.h>
 #endif
 
 /*
@@ -1100,7 +1091,7 @@ static MagickBooleanType GetEXIFProperty(const Image *image,
       {  0x8825, "exif:GPSInfo" }, /* specs as "GPSInfo IFD Pointer"? */
       {  0x8827, "exif:PhotographicSensitivity" },
       {  0x8828, "exif:OECF" },
-      {  0x8829, "exif:Interlace" },      
+      {  0x8829, "exif:Interlace" },
       {  0x882a, "exif:TimeZoneOffset" },
       {  0x882b, "exif:SelfTimerMode" },
       {  0x8830, "exif:SensitivityType" },
@@ -1133,7 +1124,7 @@ static MagickBooleanType GetEXIFProperty(const Image *image,
       {  0x9214, "exif:SubjectArea" },
       {  0x9290, "exif:SubSecTime" },
       {  0x9291, "exif:SubSecTimeOriginal" },
-      {  0x9292, "exif:SubSecTimeDigitized" },    
+      {  0x9292, "exif:SubSecTimeDigitized" },
       {  0x9211, "exif:ImageNumber" },
       {  0x9212, "exif:SecurityClassification" },
       {  0x9213, "exif:ImageHistory" },
@@ -1144,18 +1135,18 @@ static MagickBooleanType GetEXIFProperty(const Image *image,
       {  0x9286, "exif:UserComment" },
       {  0x9290, "exif:SubSecTime" },
       {  0x9291, "exif:SubSecTimeOriginal" },
-      {  0x9292, "exif:SubSecTimeDigitized" },    
+      {  0x9292, "exif:SubSecTimeDigitized" },
       {  0x9400, "exif:Temperature" },
       {  0x9401, "exif:Humidity" },
       {  0x9402, "exif:Pressure" },
       {  0x9403, "exif:WaterDepth" },
       {  0x9404, "exif:Acceleration" },
-      {  0x9405, "exif:CameraElevationAngle" },    
+      {  0x9405, "exif:CameraElevationAngle" },
       {  0x9C9b, "exif:WinXP-Title" },
       {  0x9C9c, "exif:WinXP-Comments" },
       {  0x9C9d, "exif:WinXP-Author" },
       {  0x9C9e, "exif:WinXP-Keywords" },
-      {  0x9C9f, "exif:WinXP-Subject" },      
+      {  0x9C9f, "exif:WinXP-Subject" },
       {  0xa000, "exif:FlashPixVersion" },
       {  0xa001, "exif:ColorSpace" },
       {  0xa002, "exif:PixelXDimension" },
@@ -1440,8 +1431,8 @@ static MagickBooleanType GetEXIFProperty(const Image *image,
         format;
 
       ssize_t
-        number_bytes,
-        components;
+        components,
+        number_bytes;
 
       q=(unsigned char *) (directory+(12*entry)+2);
       if (q > (exif+length-12))
@@ -1763,29 +1754,6 @@ static MagickBooleanType SkipXMPValue(const char *value)
   return(MagickTrue);
 }
 
-static MagickBooleanType ValidateXMPProfile(const char *profile,
-  const size_t length)
-{
-#if defined(MAGICKCORE_XML_DELEGATE)
-  {
-    xmlDocPtr
-      document;
-
-    /*
-      Parse XML profile.
-    */
-    document=xmlReadMemory(profile,(int) length,"xmp.xml",NULL,
-      XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
-    if (document == (xmlDocPtr) NULL)
-      return(MagickFalse);
-    xmlFreeDoc(document);
-    return(MagickTrue);
-  }
-#else
-  return(MagickFalse);
-#endif
-}
-
 static MagickBooleanType GetXMPProperty(const Image *image,const char *property)
 {
   char
@@ -1823,11 +1791,6 @@ static MagickBooleanType GetXMPProperty(const Image *image,const char *property)
   xmp_profile=StringInfoToString(profile);
   if (xmp_profile == (char *) NULL)
     return(MagickFalse);
-  if (ValidateXMPProfile(xmp_profile,GetStringInfoLength(profile)) == MagickFalse)
-    {
-      xmp_profile=DestroyString(xmp_profile);
-      return(MagickFalse);
-    }
   for (p=xmp_profile; *p != '\0'; p++)
     if ((*p == '<') && (*(p+1) == 'x'))
       break;
@@ -3767,7 +3730,7 @@ RestoreMSCWarning
             FX - value calculator.
           */
           fx_info=AcquireFxInfo(property_image,pattern+3,exception);
-          status=FxEvaluateChannelExpression(fx_info,IntensityPixelChannel,0,0,
+          status=FxEvaluateChannelExpression(fx_info,CompositePixelChannel,0,0,
             &value,exception);
           fx_info=DestroyFxInfo(fx_info);
           if (status != MagickFalse)
