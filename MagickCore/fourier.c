@@ -19,7 +19,7 @@
 %                                 July 2009                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -332,8 +332,11 @@ MagickExport Image *ComplexImages(const Image *images,const ComplexOperator op,
         MagickBooleanType
           proceed;
 
-        proceed=SetImageProgress(images,ComplexImageTag,progress++,
-          images->rows);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        #pragma omp atomic
+#endif
+        progress++;
+        proceed=SetImageProgress(images,ComplexImageTag,progress,images->rows);
         if (proceed == MagickFalse)
           status=MagickFalse;
       }

@@ -19,7 +19,7 @@
 %                              September 2013                                 %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization      %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -1962,8 +1962,9 @@ static MagickBooleanType ReadMipmaps(const ImageInfo *image_info,Image *image,
       for (i = 1; (i < (ssize_t) dds_info->mipmapcount) && w && h; i++)
       {
         AcquireNextImage(image_info,image,exception);
-        if (GetNextImageInList(image) == (Image *) NULL)
+        if (image->next == (Image *) NULL)
           return(MagickFalse);
+        image->next->alpha_trait=image->alpha_trait;
         image=SyncNextImageInList(image);
         status=SetImageExtent(image,w,h,exception);
         if (status == MagickFalse)
@@ -2867,7 +2868,11 @@ static MagickBooleanType WriteDDSImage(const ImageInfo *image_info,
         }
     }
 
-  WriteDDSInfo(image,pixelFormat,compression,mipmaps);
+  option=GetImageOption(image_info,"dds:raw");
+  if (IsStringTrue(option) == MagickFalse)
+    WriteDDSInfo(image,pixelFormat,compression,mipmaps);
+  else
+    mipmaps=0;
 
   WriteImageData(image,pixelFormat,compression,clusterFit,weightByAlpha,
     exception);

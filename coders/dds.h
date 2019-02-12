@@ -1,8 +1,8 @@
 /*
-  Copyright 1999-2018 ImageMagick Studio LLC, a non-profit organization
+  Copyright 1999-2019 ImageMagick Studio LLC, a non-profit organization
   dedicated to making software imaging solutions freely available.
   
-  You may not use this file except in compliance with the License.
+  You may not use this file except in compliance with the License.  You may
   obtain a copy of the License at
   
     https://imagemagick.org/script/license.php
@@ -19,7 +19,9 @@
 #define MagickDDSHeaders \
   MagickCoderHeader("DDS", 0, "DDS ")
 
-#define MagickDDSAliases
+#define MagickDDSAliases \
+  MagickCoderAlias("DDS", "DXT1") \
+  MagickCoderAlias("DDS", "DXT5")
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
