@@ -3955,8 +3955,11 @@ static Image *ReadOnePNGImage(MngInfo *mng_info,
                 char
                   key[MagickPathExtent];
 
-                (void) FormatLocaleString(key,MagickPathExtent,"png:%s",
+                (void) FormatLocaleString(key,MagickPathExtent,"%s",
                   text[i].key);
+                if (LocaleCompare(key,"version") == 0)
+                  (void) FormatLocaleString(key,MagickPathExtent,"png:%s",
+                    text[i].key);
                 (void) SetImageProperty(image,key,value,exception);
               }
 
@@ -6090,8 +6093,11 @@ static Image *ReadOneMNGImage(MngInfo* mng_info, const ImageInfo *image_info,
                 image->background_color=mng_background_color;
                 image->alpha_trait=UndefinedPixelTrait;
                 image->delay=0;
-                (void) SetImageBackgroundColor(image,exception);
-
+                if (SetImageBackgroundColor(image,exception) == MagickFalse)
+                  {
+                    chunk=(unsigned char *) RelinquishMagickMemory(chunk);
+                    return(DestroyImageList(image));
+                  }
                 if (logging != MagickFalse)
                   (void) LogMagickEvent(CoderEvent,GetMagickModule(),
                     "  Insert backgd layer, L=%.20g, R=%.20g T=%.20g, B=%.20g",

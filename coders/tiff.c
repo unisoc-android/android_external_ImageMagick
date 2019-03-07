@@ -715,9 +715,6 @@ static void TIFFGetProperties(TIFF *tiff,Image *image,ExceptionInfo *exception)
     length,
     type;
 
-  unsigned long
-    *tietz;
-
   if ((TIFFGetField(tiff,TIFFTAG_ARTIST,&text) == 1) &&
       (text != (char *) NULL))
     (void) SetImageProperty(image,"tiff:artist",text,exception);
@@ -791,12 +788,6 @@ static void TIFFGetProperties(TIFF *tiff,Image *image,ExceptionInfo *exception)
       }
       default:
         break;
-    }
-  if ((TIFFGetField(tiff,37706,&length,&tietz) == 1) &&
-      (tietz != (unsigned long *) NULL))
-    {
-      (void) FormatLocaleString(message,MagickPathExtent,"%lu",tietz[0]);
-      (void) SetImageProperty(image,"tiff:tietz_offset",message,exception);
     }
 }
 
@@ -2017,6 +2008,7 @@ RestoreMSCWarning
         /*
           Convert stripped TIFF image to DirectClass MIFF image.
         */
+        (void) SetImageStorageClass(image,DirectClass,exception);
         i=0;
         p=(uint32 *) NULL;
         for (y=0; y < (ssize_t) image->rows; y++)
@@ -2186,6 +2178,7 @@ RestoreMSCWarning
         /*
           Convert TIFF image to DirectClass MIFF image.
         */
+        (void) SetImageStorageClass(image,DirectClass,exception);
         number_pixels=(MagickSizeType) image->columns*image->rows;
         if (HeapOverflowSanityCheck(image->rows,sizeof(*pixels)) != MagickFalse)
           ThrowTIFFException(ResourceLimitError,"MemoryAllocationFailed");

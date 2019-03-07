@@ -337,11 +337,13 @@ MagickExport DrawInfo *CloneDrawInfo(const ImageInfo *image_info,
         x;
 
       for (x=0; fabs(draw_info->dash_pattern[x]) >= MagickEpsilon; x++) ;
-      clone_info->dash_pattern=(double *) AcquireQuantumMemory((size_t) (x+1),
+      clone_info->dash_pattern=(double *) AcquireQuantumMemory((size_t) (2*x+2),
         sizeof(*clone_info->dash_pattern));
       if (clone_info->dash_pattern == (double *) NULL)
         ThrowFatalException(ResourceLimitFatalError,
           "UnableToAllocateDashPattern");
+      (void) memset(clone_info->dash_pattern,0,(size_t) (2*x+2)*
+        sizeof(*clone_info->dash_pattern));
       (void) memcpy(clone_info->dash_pattern,draw_info->dash_pattern,(size_t)
         (x+1)*sizeof(*clone_info->dash_pattern));
     }
@@ -1807,7 +1809,8 @@ static MagickBooleanType DrawDashPolygon(const DrawInfo *draw_info,
       break;
     if (fabs(length) < MagickEpsilon)
       {
-        n++;
+        if (fabs(draw_info->dash_pattern[n]) >= MagickEpsilon)
+          n++;
         if (fabs(draw_info->dash_pattern[n]) < MagickEpsilon)
           n=0;
         length=scale*draw_info->dash_pattern[n];
@@ -1839,7 +1842,8 @@ static MagickBooleanType DrawDashPolygon(const DrawInfo *draw_info,
           dash_polygon[j].primitive=UndefinedPrimitive;
           status&=DrawStrokePolygon(image,clone_info,dash_polygon,exception);
         }
-      n++;
+      if (fabs(draw_info->dash_pattern[n]) >= MagickEpsilon)
+        n++;
       if (fabs(draw_info->dash_pattern[n]) < MagickEpsilon)
         n=0;
       length=scale*draw_info->dash_pattern[n];
@@ -2498,7 +2502,7 @@ static MagickBooleanType RenderMVGContent(Image *image,
   if (primitive == (char *) NULL)
     return(MagickFalse);
   primitive_extent=(double) strlen(primitive);
-  (void) SetImageArtifact(image,"MVG",primitive);
+  (void) SetImageArtifact(image,"mvg:vector-graphics",primitive);
   n=0;
   number_stops=0;
   stops=(StopInfo *) NULL;
@@ -4974,6 +4978,15 @@ RestoreMSCWarning
 %
 */
 
+static inline double ConstrainCoordinate(double x)
+{
+  if (x < -SSIZE_MAX)
+    return(-SSIZE_MAX);
+  if (x > SSIZE_MAX)
+    return(SSIZE_MAX);
+  return(x);
+}
+
 static void LogPrimitiveInfo(const PrimitiveInfo *primitive_info)
 {
   const char
@@ -4989,8 +5002,8 @@ static void LogPrimitiveInfo(const PrimitiveInfo *primitive_info)
 
   PointInfo
     p,
-    q,
-    point;
+    point,
+    q;
 
   register ssize_t
     i,
@@ -5114,8 +5127,8 @@ MagickExport MagickBooleanType DrawPrimitive(Image *image,
       status&=SetImageMask(image,CompositePixelMask,draw_info->composite_mask,
         exception);
     }
-  x=(ssize_t) ceil(primitive_info->point.x-0.5);
-  y=(ssize_t) ceil(primitive_info->point.y-0.5);
+  x=(ssize_t) ceil(ConstrainCoordinate(primitive_info->point.x-0.5));
+  y=(ssize_t) ceil(ConstrainCoordinate(primitive_info->point.y-0.5));
   image_view=AcquireAuthenticCacheView(image,exception);
   switch (primitive_info->primitive)
   {
