@@ -1,3 +1,38 @@
+2019-03-04  7.0.8-31 Cristy  <quetzlzacatenango@image...>
+  * Release ImageMagick version 7.0.8-31, GIT revision 15381:3122a669d:20190304
+
+2019-03-04  7.0.8-31 Cristy  <quetzlzacatenango@image...>
+  * -trim is no longer sensitive to the image virtual canvas.
+
+2019-03-03  7.0.8-30 Cristy  <quetzlzacatenango@image...>
+  * Release ImageMagick version 7.0.8-30, GIT revision 15376:16d2b4e6a:20190303
+
+2019-03-03  7.0.8-30 Cristy  <quetzlzacatenango@image...>
+  * Support define to remove additional background from an image during a
+    trim, e.g. -fuzz 5% -define trim:percent-background=0% -trim.
+
+2019-02-28  7.0.8-29 Cristy  <quetzlzacatenango@image...>
+  * Release ImageMagick version 7.0.8-29, GIT revision 15368:5d8ed9f56:20190228
+
+2019-02-28  7.0.8-29 Cristy  <quetzlzacatenango@image...>
+  * Fixed a number of issues (reference
+    https://github.com/ImageMagick/ImageMagick/issues).
+  * Fixed numerous use of uninitialized values, integer overflow, memory
+    exceeded, and timeouts (credit to OSS Fuzz).
+
+2019-02-18  7.0.8-28 Cristy  <quetzlzacatenango@image...>
+  * Release ImageMagick version 7.0.8-28, GIT revision 15345:09a7c67dd:20190218
+
+2019-02-12  7.0.8-28 Cristy  <quetzlzacatenango@image...>
+  * Fixed a number of issues (reference
+    https://github.com/ImageMagick/ImageMagick/issues).
+
+2019-02-09  7.0.8-27 Cristy  <quetzlzacatenango@image...>
+  * Release ImageMagick version 7.0.8-27, GIT revision 15315:5d48cd312:20190209
+
+2019-02-09  7.0.8-27 Cristy  <quetzlzacatenango@image...>
+  * Mod patch to properly handle subimage ranges (e.g. image.gif[2-3]).
+
 2019-02-03  7.0.8-26 Cristy  <quetzlzacatenango@image...>
   * Release ImageMagick version 7.0.8-26, GIT revision 15294:726bd82a3:20190203
 

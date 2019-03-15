@@ -520,6 +520,8 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
 
   MagickOffsetType
     offset,
+    profile_data,
+    profile_size,
     start_position;
 
   MemoryInfo
@@ -619,6 +621,8 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
     if (image->debug != MagickFalse)
       (void) LogMagickEvent(CoderEvent,GetMagickModule(),"  BMP size: %u",
         bmp_info.size);
+    profile_data=0;
+    profile_size=0;
     if (bmp_info.size == 12)
       {
         /*
@@ -817,8 +821,8 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
                 break;
               }
             }
-            (void) ReadBlobLSBLong(image);  /* Profile data */
-            (void) ReadBlobLSBLong(image);  /* Profile size */
+            profile_data=(MagickOffsetType)ReadBlobLSBLong(image);
+            profile_size=(MagickOffsetType)ReadBlobLSBLong(image);
             (void) ReadBlobLSBLong(image);  /* Reserved byte */
           }
       }
@@ -1006,8 +1010,8 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
           If we find a non zero value we asume the program that wrote the file
           wants to use the alpha channel.
         */
-        if ((image->alpha_trait == UndefinedPixelTrait) && (bmp_info.size == 40) &&
-            (bmp_info.bits_per_pixel == 32))
+        if ((image->alpha_trait == UndefinedPixelTrait) &&
+            (bmp_info.size == 40) && (bmp_info.bits_per_pixel == 32))
           {
             bytes_per_line=4*(image->columns);
             for (y=(ssize_t) image->rows-1; y >= 0; y--)
@@ -1437,6 +1441,48 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
             ReplaceImageInList(&image, flipped_image);
             image=flipped_image;
           }
+      }
+    /*
+      Read embeded ICC profile
+    */
+    if ((bmp_info.colorspace == 0x4D424544L) && (profile_data > 0) &&
+        (profile_size > 0))
+      {
+        StringInfo
+          *profile;
+
+        unsigned char
+          *datum;
+
+        offset=start_position+14+profile_data;
+        if ((offset < TellBlob(image)) ||
+            (SeekBlob(image,offset,SEEK_SET) != offset) ||
+            (GetBlobSize(image) < (MagickSizeType) (offset+profile_size)))
+          ThrowReaderException(CorruptImageError,"ImproperImageHeader");
+        profile=AcquireStringInfo((size_t) profile_size);
+        if (profile == (StringInfo *) NULL)
+          ThrowReaderException(CorruptImageError,"MemoryAllocationFailed");
+        datum=GetStringInfoDatum(profile);
+        if (ReadBlob(image,(size_t) profile_size,datum) == (ssize_t) profile_size)
+          {
+            MagickOffsetType
+              profile_size_orig;
+
+            /*
+             Trimming padded bytes.
+            */
+            profile_size_orig=(MagickOffsetType) datum[0] << 24;
+            profile_size_orig|=(MagickOffsetType) datum[1] << 16;
+            profile_size_orig|=(MagickOffsetType) datum[2] << 8;
+            profile_size_orig|=(MagickOffsetType) datum[3];
+            if (profile_size_orig < profile_size)
+              SetStringInfoLength(profile,(size_t) profile_size_orig);
+            if (image->debug != MagickFalse)
+              (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                "Profile: ICC, %u bytes",(unsigned int) profile_size_orig);
+            (void) SetImageProfile(image,"icc",profile,exception);
+          }
+        profile=DestroyStringInfo(profile);
       }
     /*
       Proceed to next image.
@@ -2198,14 +2244,14 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
     profile_data=0;
     profile_size=0;
     profile_size_pad=0;
-    if (profile) {
-      profile_data=(MagickOffsetType) bmp_info.file_size-14;  /* from head of BMP info header */
-      profile_size=(MagickOffsetType) GetStringInfoLength(profile);
-      if (profile_size%4) {
-        profile_size_pad=4-(profile_size%4);
+    if (profile != (StringInfo *) NULL)
+      {
+        profile_data=(MagickOffsetType) bmp_info.file_size-14;  /* from head of BMP info header */
+        profile_size=(MagickOffsetType) GetStringInfoLength(profile);
+        if ((profile_size % 4) > 0)
+          profile_size_pad=4-(profile_size%4);
+        bmp_info.file_size+=profile_size+profile_size_pad;
       }
-      bmp_info.file_size+=profile_size+profile_size_pad;
-    }
     (void) WriteBlob(image,2,(unsigned char *) "BM");
     (void) WriteBlobLSBLong(image,bmp_info.file_size);
     (void) WriteBlobLSBLong(image,bmp_info.ba_offset);  /* always 0 */
@@ -2248,11 +2294,10 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
         (void) WriteBlobLSBLong(image,bmp_info.green_mask);
         (void) WriteBlobLSBLong(image,bmp_info.blue_mask);
         (void) WriteBlobLSBLong(image,bmp_info.alpha_mask);
-        if (profile) {
+        if (profile != (StringInfo *) NULL)
           (void) WriteBlobLSBLong(image,0x4D424544U);  /* PROFILE_EMBEDDED */
-        } else {
+        else
           (void) WriteBlobLSBLong(image,0x73524742U);  /* sRGB */
-        }
         (void) WriteBlobLSBLong(image,(unsigned int)
           (image->chromaticity.red_primary.x*0x40000000));
         (void) WriteBlobLSBLong(image,(unsigned int)
@@ -2368,15 +2413,15 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
       (void) LogMagickEvent(CoderEvent,GetMagickModule(),
         "  Pixels:  %u bytes",bmp_info.image_size);
     (void) WriteBlob(image,(size_t) bmp_info.image_size,pixels);
-    if (profile) {
-      if (image->debug != MagickFalse)
-        (void) LogMagickEvent(CoderEvent,GetMagickModule(),
-          "  Profile:  %g bytes",(double) profile_size+profile_size_pad);
-      (void) WriteBlob(image,(size_t) profile_size,GetStringInfoDatum(profile));
-      if (profile_size_pad) {  /* padding for 4 bytes multiple */
-        (void) WriteBlob(image,(size_t) profile_size_pad,"\0\0\0");
+    if (profile != (StringInfo *) NULL)
+      {
+        if (image->debug != MagickFalse)
+          (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                                "  Profile:  %g bytes",(double) profile_size+profile_size_pad);
+        (void) WriteBlob(image,(size_t) profile_size,GetStringInfoDatum(profile));
+        if (profile_size_pad > 0)  /* padding for 4 bytes multiple */
+          (void) WriteBlob(image,(size_t) profile_size_pad,"\0\0\0");
       }
-    }
     pixel_info=RelinquishVirtualMemory(pixel_info);
     if (GetNextImageInList(image) == (Image *) NULL)
       break;
